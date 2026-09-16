@@ -4,7 +4,6 @@
 		<TargetFramework>net48-windows</TargetFramework>
 		<!--********************-->
 		<Description>Переключалка баз Multicad для AutoCAD 2018 и новее</Description>
-		<AssemblyTitle>ChangeDBmod.AC.2018</AssemblyTitle>
 	</PropertyGroup>
 	<PropertyGroup>
 		<DefineConstants>$(DefineConstants);AC</DefineConstants>

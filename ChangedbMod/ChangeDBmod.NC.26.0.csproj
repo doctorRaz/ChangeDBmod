@@ -4,7 +4,6 @@
 		<UseWPF>true</UseWPF>
 		<!--**********-->
 		<Description>Переключалка баз Multicad для nanoCAD 26</Description>
-		<AssemblyTitle>ChangeDBmod.NC.26</AssemblyTitle>
 	</PropertyGroup>
 	<PropertyGroup>
 		<DefineConstants>$(DefineConstants);NC;NC26</DefineConstants>

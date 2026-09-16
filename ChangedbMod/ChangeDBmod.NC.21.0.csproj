@@ -3,7 +3,6 @@
 		<TargetFramework>net462-windows</TargetFramework>
 		<!--*****************-->
 		<Description>Переключалка баз Multicad для nanoCAD 21-25</Description>
-		<AssemblyTitle>ChangeDBmod.NC.21</AssemblyTitle>
 	</PropertyGroup>
 	<PropertyGroup>
 		<DefineConstants>$(DefineConstants);NC</DefineConstants>

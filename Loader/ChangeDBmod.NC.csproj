@@ -3,7 +3,6 @@
 		<TargetFramework>net462</TargetFramework>
 		<!--***********-->
 		<Description>Загрузчик модулей ChangedbMod под версию nanoCAD</Description>
-		<AssemblyTitle>ChangeDBmod.NC.Loader</AssemblyTitle>
 	</PropertyGroup>
 	<PropertyGroup>
 		<DefineConstants>$(DefineConstants);NC</DefineConstants>
