@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<BaseOutputPath>..\bin\</BaseOutputPath>
+		<BaseOutputPath>bin\</BaseOutputPath>
+		<OutputPath>bin\$(Configuration)</OutputPath>
 		<TargetFramework>net6.0</TargetFramework>
 		<IsPackable>false</IsPackable>
 	</PropertyGroup>
