@@ -4,6 +4,8 @@
 		<TargetFramework>net48-windows</TargetFramework>
 		<!--********************-->
 		<Description>Переключалка баз Multicad для AutoCAD 2018 и новее</Description>
+		<HostFamily>AC</HostFamily>
+		<HostCode>a</HostCode>
 	</PropertyGroup>
 	<PropertyGroup>
 		<DefineConstants>$(DefineConstants);AC</DefineConstants>

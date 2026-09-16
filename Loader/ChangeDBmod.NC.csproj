@@ -1,8 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<TargetFramework>net462</TargetFramework>
-		<!--***********-->
 		<Description>Загрузчик модулей ChangedbMod под версию nanoCAD</Description>
+		<HostFamily>NC</HostFamily>
+		<HostCode>n</HostCode>		
 	</PropertyGroup>
 	<PropertyGroup>
 		<DefineConstants>$(DefineConstants);NC</DefineConstants>
