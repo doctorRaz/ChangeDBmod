@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<TargetFramework>net462</TargetFramework>
+		<Version>0.10</Version>
 		<Description>Загрузчик модулей ChangedbMod под версию nanoCAD</Description>
 		<HostFamily>NC</HostFamily>
 		<HostCode>n</HostCode>		
