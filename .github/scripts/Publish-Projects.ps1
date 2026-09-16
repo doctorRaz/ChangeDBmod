@@ -35,7 +35,7 @@ foreach ($projectPath in $projectPaths) {
     # --self-contained false: framework-dependent сборка (как в оригинале).
     dotnet publish "$projectPath" `
         --configuration Release `
-        --no-restore `
+        # --no-restore `
         --output "$projectDirectory" `
         --self-contained false `
         -p:Build=$env:BUILD `
