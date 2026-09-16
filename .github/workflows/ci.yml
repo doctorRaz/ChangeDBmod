@@ -60,7 +60,7 @@ jobs:
       - name: Restore
         env:
           SOLUTION_PATH: ${{ steps.config.outputs.solution_path }}
-        run: dotnet restore "$env:SOLUTION_PATH"
+        run: dotnet restore "$env:SOLUTION_PATH" --configfile "$env:GITHUB_WORKSPACE/NuGet.Config"
 
       # Собираем ту же solution, которую восстановили на предыдущем шаге.
       - name: Build
