@@ -31,11 +31,11 @@ foreach ($projectPath in $projectPaths) {
     Write-Host "Publishing: $projectPath"
     Write-Host "Output: $projectDirectory"
 
-    # Restore выполняется при publish для каждого проекта отдельно,
-    # так как BaseIntermediateOutputPath зависит от SolutionDir.
+    # --no-restore: restore уже сделан на предыдущем шаге для всего solution.
     # --self-contained false: framework-dependent сборка (как в оригинале).
     dotnet publish "$projectPath" `
         --configuration Release `
+        --no-restore `
         --output "$projectDirectory" `
         --self-contained false `
         -p:Build=$env:BUILD `
