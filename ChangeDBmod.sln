@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChangeDBmod.NC.26.0", "Chan
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChangeDBmod.NC", "Loader\ChangeDBmod.NC.csproj", "{0DDD4E94-D0C3-47C7-A8C1-0967705E9C8F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChangedbMod.Tests", "Tests\ChangedbMod.Tests\ChangedbMod.Tests.csproj", "{7E5D0B77-6B0B-4C74-9D1D-5F5B4A1A0E3A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{0DDD4E94-D0C3-47C7-A8C1-0967705E9C8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0DDD4E94-D0C3-47C7-A8C1-0967705E9C8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0DDD4E94-D0C3-47C7-A8C1-0967705E9C8F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7E5D0B77-6B0B-4C74-9D1D-5F5B4A1A0E3A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7E5D0B77-6B0B-4C74-9D1D-5F5B4A1A0E3A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7E5D0B77-6B0B-4C74-9D1D-5F5B4A1A0E3A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7E5D0B77-6B0B-4C74-9D1D-5F5B4A1A0E3A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
