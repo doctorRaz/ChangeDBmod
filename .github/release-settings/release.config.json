@@ -1,9 +1,10 @@
 {
   "solution": "ChangeDBmod.sln",
   "projects": [
-    "Loader/ChangeDBmod.NC.csproj",
-    "ChangedbMod/ChangeDBmod.NC.26.0.csproj",
-    "ChangedbMod/ChangeDBmod.NC.21.0.csproj"
+    "ChangeDBmod.NC/ChangeDBmod.NC.csproj",
+    "ChangeDBmod.NC.26/ChangeDBmod.NC.26.0.csproj",
+    "ChangeDBmod.NC.21/ChangeDBmod.NC.21.0.csproj",
+    
   ],
   "publicHere": true,
   "remote": [   
