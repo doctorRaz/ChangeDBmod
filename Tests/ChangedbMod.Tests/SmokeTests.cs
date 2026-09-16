@@ -1,5 +1,4 @@
 using System;
-using System.Reflection;
 using NUnit.Framework;
 using drz.ChangeDBmod.Servise;
 
@@ -20,11 +19,13 @@ public class SysInfoTests
     }
 
     [Test]
-    public void AssemblyTitle_IsAvailable()
+    public void ReleaseDate_IsDerivedFromAssemblyVersion()
     {
-        AssemblyTitleAttribute? title = Assembly.GetExecutingAssembly()
-            .GetCustomAttribute<AssemblyTitleAttribute>();
+        Version assemblyVersion = SysInfo.asm.GetName().Version!;
+        DateTime expected = new DateTime(2000, 1, 1)
+            .AddDays(assemblyVersion.Build)
+            .AddSeconds(assemblyVersion.Revision * 2);
 
-        Assert.That(SysInfo.sTitleAttribute, Is.Not.Null.And.Not.Empty);
+        Assert.That(SysInfo.sDateRelis, Is.EqualTo(expected.ToString()));
     }
 }
