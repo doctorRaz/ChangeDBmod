@@ -1,19 +1,20 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <IsPackable>false</IsPackable>
-  </PropertyGroup>
+	<PropertyGroup>
+		<BaseOutputPath>..\bin\</BaseOutputPath>
+		<TargetFramework>net6.0</TargetFramework>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
-    <PackageReference Include="NUnit" Version="3.14.0" />
-    <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+		<PackageReference Include="NUnit" Version="3.14.0" />
+		<PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <!-- Test the actual production implementation without pulling CAD host dependencies. -->
-    <Compile Include="../src/Servise/SysInfo.cs" Link="Production/SysInfo.cs" />
-  </ItemGroup>
+	<ItemGroup>
+		<!-- Test the actual production implementation without pulling CAD host dependencies. -->
+		<Compile Include="../src/Servise/SysInfo.cs" Link="Production/SysInfo.cs" />
+	</ItemGroup>
 
 </Project>
