@@ -27,7 +27,7 @@ jobs:
         shell: pwsh
         run: |
           # Все пути, зависящие от конкретного проекта, берём из общей release-конфигурации.
-          $configPath = Join-Path $env:GITHUB_WORKSPACE '.github/release.config.json'
+          $configPath = Join-Path $env:GITHUB_WORKSPACE '.github/release-settings/release.config.json'
 
           if (-not (Test-Path -LiteralPath $configPath)) {
               throw "Release configuration was not found: $configPath"
