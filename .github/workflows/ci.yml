@@ -1,18 +1,21 @@
 name: CI
 
-# CI использует ту же конфигурацию solution, что и release workflow.
-# Благодаря этому переименование solution не требует изменения самого workflow.
+# CI проверяет изменения при PR в master и после изменения master.
+# Обычные push в рабочие ветки не запускают CI, чтобы не расходовать Actions
+# на каждый промежуточный коммит; ручной запуск workflow остаётся доступен.
 on:
   push:
     branches:
-      - '**'
+      - master
   pull_request:
     branches:
       - master
-      
+  # Позволяет вручную проверить выбранную ветку на её текущем HEAD.
+  workflow_dispatch:
+
 permissions:
   contents: read
-  
+
 jobs:
   test:
     name: Build and test

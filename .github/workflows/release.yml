@@ -8,6 +8,9 @@ on:
     tags:
       - '*-release*'
       - '*-mandatory*'
+  # Позволяет workflow создания тега явно запустить Release на созданном теге.
+  # Push-триггер сохраняется для ручного push тега.
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -31,13 +34,25 @@ jobs:
 
     steps:
       # fetch-depth: 0 нужен для генерации changelog по истории тегов и коммитов.
+      # Основной репозиторий всегда checkout-ится через GITHUB_TOKEN.
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          submodules: false
+          token: ${{ github.token }}
 
+      # Checkout submodules вынесен в отдельный скрипт, чтобы workflow
+      # содержал только порядок шагов, а логика доступа оставалась в одном месте.
+      - name: Checkout submodules
+        if: ${{ hashFiles('.gitmodules') != '' }}
+        shell: pwsh
+        env:
+          PRIVATE_SUBMODULE_TOKEN: ${{ secrets.PRIVATE_SUBMODULE_TOKEN }}
+        run: ./.github/scripts/Checkout-Submodules.ps1
       # Валидирует конфигурацию ДО restore/build.
-      # Outputs: solution_path, projects_json, product, public_here, remote_json.
+      # Outputs: solution_path, projects_json, subprojects_json, product,
+      # public_here, remote_json.
       - name: Read release configuration
         id: config
         shell: pwsh
@@ -128,9 +143,11 @@ jobs:
           retention-days: 7
 
       - name: Publish projects
+        id: publish
         shell: pwsh
         env:
           PROJECTS_JSON: ${{ steps.config.outputs.projects_json }}
+          SUBPROJECTS_JSON: ${{ steps.config.outputs.subprojects_json }}
           BUILD: ${{ steps.version.outputs.build }}
           REVISION: ${{ steps.version.outputs.revision }}
         run: ./.github/scripts/Publish-Projects.ps1
@@ -206,6 +223,7 @@ jobs:
         shell: pwsh
         env:
           PROJECTS_JSON: ${{ steps.config.outputs.projects_json }}
+          PROJECT_TYPES_JSON: ${{ steps.publish.outputs.project_types_json }}
           PRODUCT: ${{ steps.config.outputs.product }}
           FULL_VERSION: ${{ steps.version.outputs.full_version }}
         run: ./.github/scripts/Stage-ReleaseFiles.ps1

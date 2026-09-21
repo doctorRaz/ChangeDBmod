@@ -3,34 +3,28 @@
     Формирует staging-каталог с предсказуемой структурой релизного архива.
 
 .DESCRIPTION
-    Итоговая структура staging соответствует структуре релизного ZIP и 7z:
+    Итоговая структура staging:
 
         <SolutionName>/
-            <FirstProjectName>/
-                <все файлы всех publish-проектов>
+            <MainFirstProjectName>/
+                <файлы всех основных проектов>
+            <SubProjectFirstProjectName>/
+                <файлы всех проектов subProject>
             <содержимое assets с сохранением структуры>
         <Product>_<Version>.md
 
-    Имя решения берётся из PRODUCT. Имя каталога проекта определяется
-    первым проектом из PROJECTS_JSON. Результаты всех publish-проектов
-    объединяются в этот каталог проекта.
-
-    Дополнительные файлы берутся из каталога assets в корне репозитория.
-    Они помещаются непосредственно в каталог решения и сохраняют
-    относительную структуру внутри assets.
-
-    Release notes уже создаются отдельным шагом до staging. Здесь они
-    добавляются в staging под версионным именем, чтобы попасть в оба
-    финальных архива и участвовать в их SHA-256. Отдельным GitHub asset
-    markdown-файл больше не публикуется.
-
-    Состав assets не перечисляется в workflow: добавление нового файла или
-    каталога автоматически включает его в следующий релиз.
+    PROJECT_TYPES_JSON содержит для каждого publish-проекта его тип и
+    логическую группу. Все проекты одной группы объединяются непосредственно
+    в каталог первого проекта этой группы. Это позволяет нескольким проектам
+    одного subProject поставлять общий набор файлов без промежуточных
+    каталогов отдельных проектов.
 
     Файлы publish с расширением .pdb исключаются из релиза.
+    Для Library дополнительно исключаются .deps.json и .runtimeconfig.json.
+    Для Exe эти файлы сохраняются, поскольку они необходимы для запуска.
 
-    Outputs:
-      - staging_directory - путь к подготовленному staging-каталогу.
+    Main assets размещаются в каталоге solution с сохранением структуры.
+    Assets из subProject в release не включаются.
 #>
 
 Set-StrictMode -Version Latest
@@ -41,44 +35,33 @@ if ($projectPaths.Count -eq 0) {
     throw 'PROJECTS_JSON does not contain any projects.'
 }
 
+$projectTypes = @($env:PROJECT_TYPES_JSON | ConvertFrom-Json)
+if ($projectTypes.Count -eq 0) {
+    throw 'PROJECT_TYPES_JSON does not contain any projects.'
+}
+
 $publishRoot = Join-Path $env:GITHUB_WORKSPACE 'publish'
 $assetsRoot = Join-Path $env:GITHUB_WORKSPACE 'assets'
 $releaseNotesPath = Join-Path $env:GITHUB_WORKSPACE 'release-notes.md'
 
-# PRODUCT является именем решения и одновременно корневым каталогом архива.
 $solutionName = $env:PRODUCT
 if ([string]::IsNullOrWhiteSpace($solutionName)) {
     throw 'PRODUCT is empty; cannot determine solution directory.'
 }
 
-# Все проекты объединяются в каталог первого проекта сборки согласно
-# требованиям release packaging. Остальные project output directories
-# не создаются в staging.
-$firstProjectName = [System.IO.Path]::GetFileNameWithoutExtension([string]$projectPaths[0])
-if ([string]::IsNullOrWhiteSpace($firstProjectName)) {
-    throw "Could not determine first project name from: $($projectPaths[0])"
+# Первый основной проект определяет каталог основной группы.
+$mainGroupName = [System.IO.Path]::GetFileNameWithoutExtension([string]$projectPaths[0])
+if ([string]::IsNullOrWhiteSpace($mainGroupName)) {
+    throw "Could not determine main project group name from: $($projectPaths[0])"
 }
 
 $stagingDirectory = Join-Path $env:RUNNER_TEMP "Stage_$($env:PRODUCT)_$($env:FULL_VERSION)"
 $solutionDirectory = Join-Path $stagingDirectory $solutionName
-$projectDirectory = Join-Path $solutionDirectory $firstProjectName
 
 Remove-Item -LiteralPath $stagingDirectory -Recurse -Force -ErrorAction SilentlyContinue
-New-Item -ItemType Directory -Path $projectDirectory -Force | Out-Null
+New-Item -ItemType Directory -Path $solutionDirectory -Force | Out-Null
 
-# Расширения, которые не включаются в релиз из результатов publish.
 $excludedExtensions = @('.pdb')
-
-# Формируем корни publish-каталогов заранее, чтобы для каждого файла
-# определить проект и сохранить путь относительно его publish-корня.
-$projectRoots = @()
-foreach ($projectPath in $projectPaths) {
-    $projectName = [System.IO.Path]::GetFileNameWithoutExtension([string]$projectPath)
-    $projectRoots += [pscustomobject]@{
-        Name = $projectName
-        Root = (Join-Path $publishRoot $projectName)
-    }
-}
 
 if (-not (Test-Path -LiteralPath $publishRoot -PathType Container)) {
     throw "Publish directory was not found: $publishRoot"
@@ -88,16 +71,60 @@ if (-not (Test-Path -LiteralPath $releaseNotesPath -PathType Leaf)) {
     throw "Release notes were not found: $releaseNotesPath"
 }
 
+# Каждый publish-проект получает собственную запись с абсолютным корнем.
+# Path используется как ключ, чтобы одинаковые имена проектов в разных
+# группах не смешивали результаты staging.
+$projectRoots = @()
+foreach ($projectPath in $projectPaths) {
+    $projectPathText = [string]$projectPath
+    $metadata = @($projectTypes | Where-Object { $_.Path -eq $projectPathText })
+    if ($metadata.Count -ne 1) {
+        throw "Project type metadata is missing or duplicated for project: $projectPathText"
+    }
+
+    $projectRoots += [pscustomobject]@{
+        Path      = $projectPathText
+        Name      = [string]$metadata[0].Name
+        Type      = [string]$metadata[0].Type
+        GroupName = [string]$metadata[0].GroupName
+        GroupKind = [string]$metadata[0].GroupKind
+        Root      = (Join-Path $publishRoot ([string]$metadata[0].Name))
+    }
+}
+
+# Добавляем subProject roots из metadata. Их assets намеренно не сканируются:
+# publish-каталог содержит только результаты dotnet publish.
+foreach ($metadata in $projectTypes) {
+    if ($metadata.GroupKind -ne 'SubProject') {
+        continue
+    }
+
+    $existing = @($projectRoots | Where-Object { $_.Path -eq [string]$metadata.Path })
+    if ($existing.Count -gt 0) {
+        continue
+    }
+
+    $projectRoots += [pscustomobject]@{
+        Path      = [string]$metadata.Path
+        Name      = [string]$metadata.Name
+        Type      = [string]$metadata.Type
+        GroupName = [string]$metadata.GroupName
+        GroupKind = [string]$metadata.GroupKind
+        Root      = (Join-Path $publishRoot ([string]$metadata.Name))
+    }
+}
+
 $files = Get-ChildItem -LiteralPath $publishRoot -File -Recurse |
     Where-Object { $excludedExtensions -notcontains $_.Extension.ToLowerInvariant() }
 
+$stagedPublishFileCount = 0
+
 foreach ($file in $files) {
-    # Ищем проект, внутри каталога которого находится publish-файл.
     $matchedProject = $null
     foreach ($projectRoot in $projectRoots) {
         $prefix = $projectRoot.Root + [System.IO.Path]::DirectorySeparatorChar
         if ($file.FullName.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase)) {
-            $matchedProject = $projectRoot.Root
+            $matchedProject = $projectRoot
             break
         }
     }
@@ -106,21 +133,31 @@ foreach ($file in $files) {
         throw "Could not determine publish project for file: $($file.FullName)"
     }
 
-    # Сохраняем структуру каждого publish-каталога, но начинаем её
-    # непосредственно внутри общего каталога первого проекта.
-    # Явное приведение к Char делает вызов TrimStart однозначным для
-    # Windows PowerShell/.NET, где строка из одного символа не считается
-    # корректным аргументом params [char[]].
-    $relativePath = $file.FullName.Substring($matchedProject.Length).TrimStart([char]'\', [char]'/')
-    $destinationPath = Join-Path $projectDirectory $relativePath
+    $fileName = [System.IO.Path]::GetFileName($file.FullName)
+    $isRuntimeMetadata =
+        $fileName.EndsWith('.deps.json', [System.StringComparison]::OrdinalIgnoreCase) -or
+        $fileName.EndsWith('.runtimeconfig.json', [System.StringComparison]::OrdinalIgnoreCase)
+
+    if ($matchedProject.Type -eq 'Library' -and $isRuntimeMetadata) {
+        Write-Host "Excluded for Library project: $($file.FullName)"
+        continue
+    }
+
+    # Каталог назначения определяется группой, а не отдельным проектом.
+    # Поэтому ProjectA1 и ProjectA2 из одной группы физически объединяются
+    # в каталоге ProjectA1, сохраняя внутренние подпапки publish.
+    $groupDirectory = Join-Path $solutionDirectory $matchedProject.GroupName
+    $relativePath = $file.FullName.Substring($matchedProject.Root.Length).TrimStart([char]'\', [char]'/')
+    $destinationPath = Join-Path $groupDirectory $relativePath
     $destinationDirectory = Split-Path -Parent $destinationPath
 
     New-Item -ItemType Directory -Path $destinationDirectory -Force | Out-Null
     Copy-Item -LiteralPath $file.FullName -Destination $destinationPath -Force
+    $stagedPublishFileCount++
 }
 
-# Assets размещаются в каталоге решения, а не в каталоге проекта.
-# Относительный путь внутри assets полностью сохраняется.
+# Assets основного решения размещаются в каталоге solution, а не внутри
+# project/subProject. Каталоги assets самих subProject сюда не попадают.
 if (Test-Path -LiteralPath $assetsRoot -PathType Container) {
     $assetFiles = @(Get-ChildItem -LiteralPath $assetsRoot -File -Recurse)
 
@@ -139,14 +176,10 @@ else {
     Write-Host "Assets directory not found; no additional release files to stage."
 }
 
-# Release notes получают версионное имя и входят непосредственно в оба
-# финальных архива. Они не публикуются отдельным GitHub Release asset.
 $markdownName = "${env:PRODUCT}_${env:FULL_VERSION}.md"
 $stagedMarkdownPath = Join-Path $stagingDirectory $markdownName
 Copy-Item -LiteralPath $releaseNotesPath -Destination $stagedMarkdownPath -Force
 
-# Выводим уже готовое дерево staging. Этот список соответствует структуре,
-# которая будет передана модулю упаковки и попадёт в финальные архивы.
 $stagedFiles = @(Get-ChildItem -LiteralPath $stagingDirectory -File -Recurse |
     ForEach-Object {
         $_.FullName.Substring($stagingDirectory.Length).TrimStart([char]'\', [char]'/')
@@ -161,8 +194,6 @@ else {
     $stagedFiles | ForEach-Object { Write-Host $_ }
 }
 Write-Host "--- End release staging tree ($($stagedFiles.Count) file(s)) ---"
+Write-Host "Staged $stagedPublishFileCount publish file(s), release notes and assets into: $stagingDirectory"
 
-Write-Host "Staged $($files.Count) publish file(s), release notes and assets into: $stagingDirectory"
-
-# Передаём путь staging следующему этапу workflow через GITHUB_OUTPUT.
 "staging_directory=$stagingDirectory" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
