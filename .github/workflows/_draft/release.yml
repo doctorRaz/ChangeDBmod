@@ -1,0 +1,79 @@
+name: docProp Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+env:
+  PUBLIC_REPOSITORY: doctorRaz/docProp
+
+jobs:
+  release:
+    name: Build and release docProp
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            6.0.x
+            8.0.x
+
+      - name: Restore
+        run: dotnet restore docProp.sln
+
+      - name: Test
+        run: dotnet test docProp.sln --configuration Release --no-restore --verbosity normal
+
+      - name: Publish docProp
+        run: dotnet publish drzDocProps.NCAD/drzDocProps.NCAD.csproj --configuration Release --no-restore --output publish/docProp --self-contained false
+
+      - name: Create release archive
+        shell: pwsh
+        run: Compress-Archive -Path publish/docProp/* -DestinationPath "${env:GITHUB_REF_NAME}.zip"
+
+      - name: Generate release notes
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tagRef = gh api "repos/$env:GITHUB_REPOSITORY/git/ref/tags/$env:GITHUB_REF_NAME" | ConvertFrom-Json
+          $tagMessage = ''
+          if ($tagRef.object.type -eq 'tag') {
+            $tagMessage = (gh api "repos/$env:GITHUB_REPOSITORY/git/tags/$($tagRef.object.sha)" | ConvertFrom-Json).message.Trim()
+          } else {
+            $tagMessage = (gh api "repos/$env:GITHUB_REPOSITORY/commits/$($tagRef.object.sha)" | ConvertFrom-Json).commit.message.Trim()
+          }
+
+          $generated = gh api --method POST "repos/$env:GITHUB_REPOSITORY/releases/generate-notes" -f tag_name="$env:GITHUB_REF_NAME" | ConvertFrom-Json
+          $body = $tagMessage
+          if ($generated.body) {
+            if ($body) { $body += "`r`n`r`n" }
+            $body += $generated.body
+          }
+          $body | Set-Content -Path release-notes.md -Encoding utf8NoBOM
+
+      - name: Create public release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.DOCPROP_RELEASE_TOKEN }}
+        run: |
+          $releaseNotes = Get-Content -Path release-notes.md -Raw
+          $body = @{
+            tag_name = $env:GITHUB_REF_NAME
+            target_commitish = 'master'
+            name = $env:GITHUB_REF_NAME
+            body = $releaseNotes
+          } | ConvertTo-Json -Depth 3
+
+          $release = $body | gh api --method POST "repos/$env:PUBLIC_REPOSITORY/releases" --input - | ConvertFrom-Json
+          $uploadUrl = $release.upload_url -replace '\{\?name,label\}$', ''
+          gh api --method POST "${uploadUrl}?name=$($env:GITHUB_REF_NAME).zip" --input "${env:GITHUB_REF_NAME}.zip" -H 'Content-Type: application/zip'

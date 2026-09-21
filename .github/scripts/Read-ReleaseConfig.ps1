@@ -1,19 +1,19 @@
 <#
 .SYNOPSIS
-    Читает и валидирует .github/release.config.json.
+    Читает и валидирует конфигурацию release.
 
 .DESCRIPTION
-    Проверяет, что:
-      - файл конфигурации существует;
-      - solution непуст и существует;
-      - projects содержит хотя бы один существующий путь;
-      - publicHere задан как boolean;
-      - remote содержит только непустые имена GitHub-репозиториев.
+    Проверяет solution, основной список projects, необязательный список
+    subProjects, publicHere и remote.
+
+    subProjects состоит из объектов с массивом projects. Первый проект
+    каждой группы определяет имя каталога этой группы в release archive.
 
     Возвращает через $env:GITHUB_OUTPUT:
-      - solution_path - путь к solution относительно корня репозитория;
-      - projects_json - JSON-массив путей к проектам;
-      - product       - имя продукта (имя solution без расширения);
+      - solution_path - путь к solution;
+      - projects_json - JSON-массив основных проектов;
+      - subprojects_json - JSON-массив групп дополнительных проектов;
+      - product       - имя продукта;
       - public_here   - публиковать ли Release в текущем репозитории;
       - remote_json   - JSON-массив целевых mirror-репозиториев.
 #>
@@ -35,7 +35,7 @@ if ([string]::IsNullOrWhiteSpace($config.solution)) {
     throw "Release configuration property 'solution' is empty."
 }
 
-# projects обязателен и непуст: без него нечего публиковать.
+# projects обязателен и непуст: без основного проекта нечего публиковать.
 if ($null -eq $config.projects -or @($config.projects).Count -eq 0) {
     throw "Release configuration property 'projects' must contain at least one project."
 }
@@ -51,6 +51,7 @@ if ($null -eq $config.remote) {
 $solutionPath = $config.solution
 $projectPaths = @($config.projects)
 $remoteRepos = @($config.remote)
+$subProjects = @($config.subProjects)
 $solutionName = [System.IO.Path]::GetFileNameWithoutExtension($solutionPath)
 
 if ([string]::IsNullOrWhiteSpace($solutionName)) {
@@ -66,7 +67,7 @@ Write-Host "Solution: $solutionPath"
 Write-Host "Projects:"
 
 foreach ($projectPath in $projectPaths) {
-    if ([string]::IsNullOrWhiteSpace($projectPath)) {
+    if ([string]::IsNullOrWhiteSpace([string]$projectPath)) {
         throw "Release configuration contains an empty project path."
     }
 
@@ -75,6 +76,34 @@ foreach ($projectPath in $projectPaths) {
     }
 
     Write-Host "  $projectPath"
+}
+
+# subProjects не обязателен для существующих конфигураций. Если он задан,
+# каждая группа обязана содержать хотя бы один существующий project path.
+Write-Host "Subprojects:"
+foreach ($subProject in $subProjects) {
+    if ($null -eq $subProject.projects -or @($subProject.projects).Count -eq 0) {
+        throw "Each subProjects entry must contain at least one project."
+    }
+
+    $subProjectPaths = @($subProject.projects)
+    $groupName = [System.IO.Path]::GetFileNameWithoutExtension([string]$subProjectPaths[0])
+    if ([string]::IsNullOrWhiteSpace($groupName)) {
+        throw "Could not determine subproject group name from first project: $($subProjectPaths[0])"
+    }
+
+    Write-Host "  [$groupName]"
+    foreach ($projectPath in $subProjectPaths) {
+        if ([string]::IsNullOrWhiteSpace([string]$projectPath)) {
+            throw "Release configuration contains an empty subproject path."
+        }
+
+        if (-not (Test-Path -LiteralPath (Join-Path $env:GITHUB_WORKSPACE $projectPath))) {
+            throw "Subproject project was not found: $projectPath"
+        }
+
+        Write-Host "    $projectPath"
+    }
 }
 
 Write-Host "Public in current repository: $($config.publicHere)"
@@ -96,6 +125,11 @@ foreach ($remoteRepo in $remoteRepos) {
 # JSON используется для передачи массивов между шагами через GITHUB_OUTPUT
 # без потери структуры и экранирования.
 $projectsJson = $projectPaths | ConvertTo-Json -Compress
+if (@($subProjects).Count -eq 0) {
+    $subProjectsJson = '[]'
+} else {
+    $subProjectsJson = $subProjects | ConvertTo-Json -Compress -Depth 10
+}
 
 # PowerShell не выдаёт JSON-представление для пустого pipeline.
 # Явно сохраняем [] в output, чтобы workflow отличал пустой список
@@ -108,6 +142,7 @@ if ($remoteRepos.Count -eq 0) {
 
 "solution_path=$solutionPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 "projects_json=$projectsJson" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+"subprojects_json=$subProjectsJson" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 "product=$solutionName" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 "public_here=$($config.publicHere.ToString().ToLowerInvariant())" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 "remote_json=$remoteJson" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8

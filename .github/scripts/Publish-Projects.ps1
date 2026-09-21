@@ -1,39 +1,103 @@
 <#
 .SYNOPSIS
-    Публикует каждый независимый release-проект в отдельный каталог.
+    Публикует основные проекты и группы subProjects для release.
 
 .DESCRIPTION
-    Для каждого проекта из $env:PROJECTS_JSON выполняется dotnet publish
-    в $GITHUB_WORKSPACE/publish/<ProjectName>.
+    Основные проекты передаются через PROJECTS_JSON, дополнительные группы —
+    через SUBPROJECTS_JSON. Каждый проект публикуется в отдельный каталог,
+    после чего Stage-ReleaseFiles.ps1 объединяет результаты внутри своей
+    логической группы.
 
-    Разделение по каталогам нужно, чтобы publish-операции не влияли друг на
-    друга: у проектов могут пересекаться имена выходных файлов и т.п.
-    Объединение в плоскую структуру происходит на следующем шаге.
+    Первый проект группы определяет имя каталога группы. Для каждого проекта
+    сохраняется Path, Name, Type, GroupName и GroupKind, чтобы staging не
+    терял принадлежность проекта к subProject даже при совпадении имён.
 
-    Build и Revision передаются как свойства MSBuild - они общие для всех
-    проектов, тогда как Major.Minor каждый проект берёт из своей версии.
+    Build и Revision общие для всех публикаций. Restore выполняется отдельно
+    для subProject-проектов, потому что они могут находиться в подключённом
+    Git submodule и не входить в основной solution.
+
+    Для legacy MSBuild-проектов dotnet publish может успешно завершиться, но
+    не заполнить указанный --output каталог. В этом случае результат берётся
+    из TargetDir, чтобы такие проекты также попадали в единый publish tree.
 #>
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$projectPaths = $env:PROJECTS_JSON | ConvertFrom-Json
-$publishRoot = Join-Path $env:GITHUB_WORKSPACE 'publish'
+$mainProjects = @($env:PROJECTS_JSON | ConvertFrom-Json)
+$subProjects = if ([string]::IsNullOrWhiteSpace($env:SUBPROJECTS_JSON)) {
+    @()
+} else {
+    @($env:SUBPROJECTS_JSON | ConvertFrom-Json)
+}
 
-# Чистим каталог от возможных артефактов предыдущего запуска.
+if ($mainProjects.Count -eq 0) {
+    throw 'PROJECTS_JSON does not contain any projects.'
+}
+
+$publishRoot = Join-Path $env:GITHUB_WORKSPACE 'publish'
 Remove-Item -LiteralPath $publishRoot -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Path $publishRoot -Force | Out-Null
 
-foreach ($projectPath in $projectPaths) {
-    $projectName = [System.IO.Path]::GetFileNameWithoutExtension($projectPath)
+# Метаданные проекта являются контрактом между publish и staging.
+$projectTypes = @()
+
+function Publish-ReleaseProject {
+    param(
+        [Parameter(Mandatory)] [string]$ProjectPath,
+        [Parameter(Mandatory)] [string]$GroupName,
+        [Parameter(Mandatory)] [string]$GroupKind
+    )
+
+    if ([string]::IsNullOrWhiteSpace($ProjectPath)) {
+        throw 'Release configuration contains an empty project path.'
+    }
+
+    $projectName = [System.IO.Path]::GetFileNameWithoutExtension($ProjectPath)
+    if ([string]::IsNullOrWhiteSpace($projectName)) {
+        throw "Could not determine project name from: $ProjectPath"
+    }
+
     $projectDirectory = Join-Path $publishRoot $projectName
 
-    Write-Host "Publishing: $projectPath"
-    Write-Host "Output: $projectDirectory"
+    # OutputType вычисляется MSBuild с учётом SDK defaults и импортов.
+    $outputType = (dotnet msbuild "$ProjectPath" -getProperty:OutputType).Trim()
+    if ([string]::IsNullOrWhiteSpace($outputType)) {
+        throw "OutputType is empty for project: $ProjectPath"
+    }
 
-    # --no-restore: restore уже сделан на предыдущем шаге для всего solution.
-    # --self-contained false: framework-dependent сборка (как в оригинале).
-    dotnet publish "$projectPath" `
+    switch ($outputType.ToLowerInvariant()) {
+        'library' { $projectType = 'Library' }
+        'exe'     { $projectType = 'Exe' }
+        'winexe'  { $projectType = 'Exe' }
+        default   { throw "Unsupported OutputType '$outputType' for project: $ProjectPath" }
+    }
+
+    # Используем script scope: функция выполняется в дочерней области PowerShell,
+    # поэтому обычное += к переменной верхнего уровня не изменило бы исходный массив.
+    $script:projectTypes += [pscustomobject]@{
+        Path      = $ProjectPath
+        Name      = $projectName
+        Type      = $projectType
+        GroupName = $GroupName
+        GroupKind = $GroupKind
+    }
+
+    Write-Host "Publishing: $ProjectPath"
+    Write-Host "Output: $projectDirectory"
+    Write-Host "Project type: $projectType (OutputType=$outputType)"
+    Write-Host "Release group: $GroupName ($GroupKind)"
+
+    # Основной solution уже восстановлен workflow. Для subProject выполняем
+    # restore здесь, так как его проекты могут не входить в solution.
+    if ($GroupKind -eq 'SubProject') {
+        dotnet restore "$ProjectPath"
+        if ($LASTEXITCODE -ne 0) {
+            throw "dotnet restore failed for $ProjectPath with exit code $LASTEXITCODE"
+        }
+    }
+
+    dotnet publish "$ProjectPath" `
         --configuration Release `
         --no-restore `
         --output "$projectDirectory" `
@@ -41,9 +105,67 @@ foreach ($projectPath in $projectPaths) {
         -p:Build=$env:BUILD `
         -p:Revision=$env:REVISION
 
-    # dotnet publish возвращает ненулевой exit code при ошибке - проверяем явно,
-    # чтобы не продолжать сборку архива из неполного publish-результата.
     if ($LASTEXITCODE -ne 0) {
-        throw "dotnet publish failed for $projectPath with exit code $LASTEXITCODE"
+        throw "dotnet publish failed for $ProjectPath with exit code $LASTEXITCODE"
+    }
+
+    # SDK-style projects normally populate --output directly. Legacy MSBuild
+    # projects can report success without doing so, поэтому проверяем результат
+    # явно и переносим стандартный TargetDir только для такого случая.
+    $publishedFiles = @(Get-ChildItem -LiteralPath $projectDirectory -File -Recurse -ErrorAction SilentlyContinue)
+    if ($publishedFiles.Count -eq 0) {
+        $targetDirectory = (dotnet msbuild "$ProjectPath" -getProperty:TargetDir).Trim()
+        if ([string]::IsNullOrWhiteSpace($targetDirectory)) {
+            throw "Project publish produced no files and TargetDir is empty: $ProjectPath"
+        }
+
+        if (-not (Test-Path -LiteralPath $targetDirectory -PathType Container)) {
+            throw "Project publish produced no files and TargetDir was not found: $targetDirectory"
+        }
+
+        $targetFiles = @(Get-ChildItem -LiteralPath $targetDirectory -File -Recurse)
+        if ($targetFiles.Count -eq 0) {
+            throw "Project publish produced no files and TargetDir is empty: $targetDirectory"
+        }
+
+        Write-Host "dotnet publish did not populate output for legacy project; copying $($targetFiles.Count) file(s) from TargetDir: $targetDirectory"
+        New-Item -ItemType Directory -Path $projectDirectory -Force | Out-Null
+        Copy-Item -LiteralPath (Join-Path $targetDirectory '*') -Destination $projectDirectory -Recurse -Force
+
+        $publishedFiles = @(Get-ChildItem -LiteralPath $projectDirectory -File -Recurse)
+    }
+
+    if ($publishedFiles.Count -eq 0) {
+        throw "Project publish produced no files: $ProjectPath"
+    }
+
+    Write-Host "Published $($publishedFiles.Count) file(s) for: $ProjectPath"
+}
+
+# Основная группа сохраняет прежнюю семантику: её каталог определяется
+# первым проектом списка projects.
+$mainGroupName = [System.IO.Path]::GetFileNameWithoutExtension([string]$mainProjects[0])
+foreach ($projectPath in $mainProjects) {
+    Publish-ReleaseProject -ProjectPath ([string]$projectPath) -GroupName $mainGroupName -GroupKind 'Main'
+}
+
+# Каждая subProjects запись является отдельной логической группой. Первый
+# проект записи определяет имя каталога группы в итоговом архиве.
+foreach ($subProject in $subProjects) {
+    $groupProjects = @($subProject.projects)
+    if ($groupProjects.Count -eq 0) {
+        throw 'Each subProjects entry must contain at least one project.'
+    }
+
+    $groupName = [System.IO.Path]::GetFileNameWithoutExtension([string]$groupProjects[0])
+    if ([string]::IsNullOrWhiteSpace($groupName)) {
+        throw "Could not determine subproject group name from: $($groupProjects[0])"
+    }
+
+    foreach ($projectPath in $groupProjects) {
+        Publish-ReleaseProject -ProjectPath ([string]$projectPath) -GroupName $groupName -GroupKind 'SubProject'
     }
 }
+
+$projectTypesJson = $projectTypes | ConvertTo-Json -Compress -Depth 5
+"project_types_json=$projectTypesJson" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8

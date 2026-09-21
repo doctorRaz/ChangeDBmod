@@ -45,10 +45,24 @@ foreach ($entry in @{
     }
 }
 
+Write-Host "=== Create GitHub Release ==="
+Write-Host "Repository: $Repository"
+Write-Host "Tag: $tag"
+Write-Host "Title: $releaseTitle"
+Write-Host "Archive: $archiveName"
+Write-Host "Protected archive: $protectedArchiveName"
+Write-Host "Manifest: update.json"
+Write-Host "Verify tag: $VerifyTag"
+
 # --- Идемпотентность для rerun ---
 # Удаляем существующий Release, но сохраняем тег: для private-репозитория
 # gh release create вызывается с --verify-tag и ожидает существующий тег.
+Write-Host "Checking/removing existing release '$tag'..."
+$deleteStarted = [System.Diagnostics.Stopwatch]::StartNew()
 gh release delete $tag --repo $Repository --yes 2>$null
+$deleteExitCode = $LASTEXITCODE
+$deleteStarted.Stop()
+Write-Host "Release delete finished with exit code $deleteExitCode in $($deleteStarted.Elapsed.TotalSeconds.ToString('F1')) s."
 
 $args = @(
     'release', 'create', $tag,
@@ -64,7 +78,15 @@ if ($VerifyTag) {
     $args += '--verify-tag'
 }
 
+Write-Host "Starting 'gh release create'..."
+$createStarted = [System.Diagnostics.Stopwatch]::StartNew()
 gh @args
-if ($LASTEXITCODE -ne 0) {
-    throw "gh release create failed for $Repository with exit code $LASTEXITCODE"
+$createExitCode = $LASTEXITCODE
+$createStarted.Stop()
+Write-Host "'gh release create' finished with exit code $createExitCode in $($createStarted.Elapsed.TotalSeconds.ToString('F1')) s."
+
+if ($createExitCode -ne 0) {
+    throw "gh release create failed for $Repository with exit code $createExitCode"
 }
+
+Write-Host "=== GitHub Release created successfully ==="

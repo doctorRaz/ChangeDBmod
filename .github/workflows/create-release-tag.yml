@@ -1,0 +1,148 @@
+name: Create release tag
+
+# Автоматически создаёт release/mandatory tag после merge PR в master.
+# Публикацию GitHub Release выполняет отдельный release.yml, который
+# запускается уже по push созданного тега.
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - master
+
+permissions:
+  contents: write
+  # Нужно для явного запуска другого workflow через workflow_dispatch.
+  actions: write
+
+jobs:
+  create-tag:
+    name: Create release tag
+    # closed означает только закрытие PR; реальный merge проверяется отдельно.
+    if: >
+      github.event.pull_request.merged == true &&
+      contains(github.event.pull_request.labels.*.name, 'publish')
+    runs-on: ubuntu-latest
+
+    env:
+      RELEASE_CONFIG_FILE: '.github/release-settings/release.config.json'
+
+    steps:
+      # Проверяем именно merge commit этого PR, чтобы конфигурация и версия
+      # соответствовали тому же состоянию исходного кода, на которое будет
+      # установлен release/mandatory tag.
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          fetch-depth: 0
+
+      # Версия берётся из первого проекта release.config.json.
+      - name: Read version configuration
+        id: version
+        shell: pwsh
+        run: |
+          $configPath = Join-Path $env:GITHUB_WORKSPACE $env:RELEASE_CONFIG_FILE
+          if (-not (Test-Path -LiteralPath $configPath)) { throw "Release configuration was not found: $configPath" }
+          $config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json
+          if ($null -eq $config.projects -or @($config.projects).Count -eq 0) { throw "Release configuration property 'projects' must contain at least one project." }
+          $projectPath = [string]@($config.projects)[0]
+          $projectFile = Join-Path $env:GITHUB_WORKSPACE $projectPath
+          if (-not (Test-Path -LiteralPath $projectFile)) { throw "First configured project was not found: $projectPath" }
+          $product = [System.IO.Path]::GetFileNameWithoutExtension([string]$config.solution)
+          if ([string]::IsNullOrWhiteSpace($product)) { throw "Could not determine product name from solution: $($config.solution)" }
+
+          # Используем MSBuild, а не разбор XML .csproj напрямую.
+          # Так учитываются Directory.Build.props, свойства проекта и их
+          # переопределения в реальной вычисленной конфигурации проекта.
+          $baseVersion = (dotnet msbuild "$projectFile" -getProperty:Version).Trim()
+          if ([string]::IsNullOrWhiteSpace($baseVersion)) { throw "Effective Version was not found for first project: $projectPath" }
+          if ($baseVersion -notmatch '^([0-9]+)\.([0-9]+)$') { throw "Effective project Version must contain only Major.Minor: '$baseVersion'" }
+          $major = [int]$Matches[1]
+          $minor = [int]$Matches[2]
+          "project=$projectPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "product=$product" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "base_version=$baseVersion" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "major=$major" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "minor=$minor" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          Write-Host "Product: $product"
+          Write-Host "First project: $projectPath"
+          Write-Host "Effective Version: $baseVersion"
+
+      # Сравниваем Major текущей версии с предыдущей версией из tags.
+      - name: Determine release type
+        id: release-type
+        shell: pwsh
+        env:
+          PRODUCT: ${{ steps.version.outputs.product }}
+          CURRENT_MAJOR: ${{ steps.version.outputs.major }}
+        run: |
+          $tags = @(git tag --list "$($env:PRODUCT)_*" --sort=-version:refname)
+          $previousMajor = $null
+          foreach ($tag in $tags) {
+              if ($tag -match "^$([regex]::Escape($env:PRODUCT))_([0-9]+)\.([0-9]+)-(release|mandatory)([0-9]+)$") {
+                  $previousMajor = [int]$Matches[1]
+                  Write-Host "Previous release tag: $tag"
+                  break
+              }
+          }
+          if ($null -eq $previousMajor) { $type = 'release' }
+          elseif ([int]$env:CURRENT_MAJOR -ne $previousMajor) { $type = 'mandatory' }
+          else { $type = 'release' }
+          "type=$type" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          Write-Host "Release type: $type"
+
+      # release и mandatory имеют независимые счётчики внутри своей серии.
+      - name: Calculate next tag number
+        id: next-tag
+        shell: pwsh
+        env:
+          PRODUCT: ${{ steps.version.outputs.product }}
+          BASE_VERSION: ${{ steps.version.outputs.base_version }}
+          RELEASE_TYPE: ${{ steps.release-type.outputs.type }}
+        run: |
+          $prefix = "$($env:PRODUCT)_$($env:BASE_VERSION)-$($env:RELEASE_TYPE)"
+          $existing = @(git tag --list "$prefix[0-9]*")
+          $maxNumber = 0
+          foreach ($tag in $existing) {
+              if ($tag -match "^$([regex]::Escape($prefix))([0-9]+)$") {
+                  $number = [int]$Matches[1]
+                  if ($number -gt $maxNumber) { $maxNumber = $number }
+              }
+          }
+          $nextNumber = $maxNumber + 1
+          $tag = "$prefix$nextNumber"
+          if (git tag --list $tag) { throw "Tag '$tag' already exists. Refusing to overwrite an existing tag." }
+          "tag=$tag" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          Write-Host "Next tag: $tag"
+
+      # Тег ставится на commit результата merge PR.
+      - name: Create tag on merged commit
+        env:
+          TAG: ${{ steps.next-tag.outputs.tag }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          TAG_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          if [ -z "$MERGE_SHA" ] || [ "$MERGE_SHA" = "null" ]; then
+            echo "Merged commit SHA is unavailable."
+            exit 1
+          fi
+          # Используем GITHUB_TOKEN для создания тега.
+          # Следующий шаг явно запускает Release, поэтому зависимость от
+          # автоматического push-события здесь не требуется.
+          git fetch origin "$MERGE_SHA" --no-tags
+          git tag "$TAG" "$MERGE_SHA"
+          git push "https://x-access-token:$TAG_TOKEN@github.com/$GITHUB_REPOSITORY.git" "refs/tags/$TAG"
+          echo "Created tag '$TAG' on commit '$MERGE_SHA'."
+
+      # Явно запускаем Release на только что созданном теге.
+      # Это надёжнее, чем рассчитывать на повторный workflow от push,
+      # выполненного другим workflow.
+      - name: Start release workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.next-tag.outputs.tag }}
+        shell: bash
+        run: |
+          gh workflow run release.yml --repo "$GITHUB_REPOSITORY" --ref "$TAG"
+          echo "Started Release workflow for tag '$TAG'."
