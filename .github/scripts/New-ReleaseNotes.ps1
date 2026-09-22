@@ -35,7 +35,7 @@ $tagRef = gh api "repos/$repo/git/ref/tags/$tag" | ConvertFrom-Json
 
 if ($tagRef.object.type -eq 'tag') {
     # annotated tag: сообщение лежит в объекте tag.
-    $tagMessage = (gh api "repos/$repo/git/tags/$($tagRef.object.sha)" | ConvertFrom-Json).message.Trim()
+    $tagMessage = (gh api "repos/$repo/git/tags/$($tagRef.object.sha)" | ConvertFrom-Json).message
 } else {
     # lightweight tag: берём commit message.
     $tagMessage = (gh api "repos/$repo/commits/$($tagRef.object.sha)" | ConvertFrom-Json).commit.message.Trim()
@@ -47,10 +47,12 @@ if ($tagRef.object.type -eq 'tag') {
 $generated = gh api --method POST "repos/$repo/releases/generate-notes" -f tag_name="$tag" | ConvertFrom-Json
 
 # --- 3. Склейка ---
-# \r\n - потому что артефакты потребляются в основном на Windows.
+# Не обрабатываем содержимое tagMessage: это Markdown из PR body и символ '#' 
+# должен остаться без изменений.
+# `r`n - потому что артефакты потребляются в основном на Windows.
 $body = "# $tag"
-if ($tagMessage)  { $body += "`r`n`r`n$tagMessage" }
-if ($generated.body) { $body += "`r`n`r`n$($generated.body)" }
+if (-not [string]::IsNullOrEmpty([string]$tagMessage))  { $body += "`r`n`r`n$tagMessage" }
+if (-not [string]::IsNullOrEmpty([string]$generated.body)) { $body += "`r`n`r`n$($generated.body)" }
 
 # utf8NoBOM - GitHub корректно отображает UTF-8 без BOM; BOM иногда
 # приводит к появлению «» в начале markdown-файла.
