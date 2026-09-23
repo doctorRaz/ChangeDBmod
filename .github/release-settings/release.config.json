@@ -1,16 +1,17 @@
 {
-  "solution": "ChangeDBmod.sln",
-  "projects": [
-    "ChangeDBmod.NC/ChangeDBmod.NC.csproj",
-    "ChangeDBmod.NC.21/ChangeDBmod.NC.21.0.csproj",
-    "ChangeDBmod.NC.26/ChangeDBmod.NC.26.0.csproj",
-    "ChangeDBmod.AC2018/ChangeDBmod.AC2018.csproj",
-    
-  ],
-	"subProjects": [],
-  "publicHere": true,
-  "remote": [
-   "doctorRaz/ChangeDBmod"
-  ],
-  "modules": []
+    "solution": "ChangeDBmod.sln",
+    "projects": [
+        "ChangeDBmod.NC/ChangeDBmod.NC.csproj",
+        "ChangeDBmod.NC.21/ChangeDBmod.NC.21.0.csproj",
+        "ChangeDBmod.NC.26/ChangeDBmod.NC.26.0.csproj",
+        "ChangeDBmod.AC2018/ChangeDBmod.AC2018.csproj"
+    ],
+    "subProjects": [
+    ],
+    "modules": [
+    ],
+    "publicHere": true,
+    "remote": [
+        "doctorRaz/ChangeDBmod"
+    ]
 }
