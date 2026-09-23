@@ -97,4 +97,4 @@ dotnet build ChangeDBmod.sln
 
 ## Лицензия
 
-Проект распространяется по лицензии [Apache License 2.0](LICENSE).
+Проект распространяется по лицензии [MIT License](LICENSE).
