@@ -111,8 +111,6 @@ namespace drz.ChangeDBmod
             //string sPSQL = "pgsql:nspds240";
             //bsetBD = Multicad.AplicationServices.McParamManager.SetParam(sPSQL, 9);
 
-        }
-
         #endregion
 
     }
