@@ -136,7 +136,7 @@ foreach ($module in $modules) {
 
     foreach ($projectPath in @($module.projects)) {
         $moduleProject = [string]$projectPath
-        $normalizedProject = $moduleProject.Replace('\','/').Trim('/')
+        $normalizedProject = $moduleProject.Replace('\\','/').Trim('/')
         if ([string]::IsNullOrWhiteSpace($normalizedProject)) {
             throw "Module '$moduleRepository' contains an empty project path."
         }
@@ -173,7 +173,7 @@ if (@($subProjects).Count -eq 0) {
 # PowerShell не выдаёт JSON-представление для пустого pipeline.
 # Явно сохраняем [] в output, чтобы workflow отличал пустой список
 # remote от отсутствующего значения и не запускал публикацию.
-$modulesJson = if ($modules.Count -eq 0) { '[]' } else { $modules | ConvertTo-Json -Compress -Depth 10 }
+$modulesJson = if (@($modules).Count -eq 0) { '[]' } else { $modules | ConvertTo-Json -Compress -Depth 10 }
 
 if ($remoteRepos.Count -eq 0) {
     $remoteJson = '[]'
