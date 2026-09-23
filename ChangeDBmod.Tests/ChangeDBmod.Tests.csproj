@@ -14,9 +14,4 @@
     <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <!-- Test the actual production implementation without pulling CAD host dependencies. -->
-    <Compile Include="../src/Servise/SysInfo.cs" Link="Production/SysInfo.cs" />
-  </ItemGroup>
-
 </Project>
