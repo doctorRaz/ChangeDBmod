@@ -98,6 +98,7 @@ namespace drz.ChangeDBmod
 
             throw new System.InvalidOperationException("McParamManager.SetParam не найден.");
         }
+
             //Example switch other database;
             //string oldBd = Multicad.AplicationServices.McParamManager.GetStringParam(9);//получаем путь свойства базы текущего приложения
 
