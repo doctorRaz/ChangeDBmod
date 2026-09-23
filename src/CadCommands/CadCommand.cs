@@ -1,6 +1,4 @@
 
-using System.ComponentModel;
-using drz.ChangeDBmod.Servise;
 
 #if NC26
 using MC = Multicad.ApplicationServices;
@@ -34,7 +32,6 @@ namespace drz.ChangeDBmod
         #region INIT
         public void Initialize()
         {
-            ListCmdInfo.ListCMD();//выводим список команд с описаниями
         }
 
         public void Terminate()
@@ -46,22 +43,11 @@ namespace drz.ChangeDBmod
 
         #region Command
 
-        #region INFO
-
-        [Rtm.CommandMethod("drz_changedb_info")]
-        [Description("Информация о командах сборки")]
-        public static void ListCMD()
-        {
-            ListCmdInfo.ListCMD();//выводим список команд с описаниями
-        }
-
-        #endregion
 
         /// <summary>
         /// Переключатель баз MultiCad
         /// </summary>
         [Rtm.CommandMethod("drz_changedb", Rtm.CommandFlags.Session)]
-        [Description("Переключатель баз MultiCad")]
         public void ChangedbMod()
         {
             App.Document doc = App.Application.DocumentManager.MdiActiveDocument;
