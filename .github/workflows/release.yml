@@ -51,8 +51,8 @@ jobs:
           PRIVATE_SUBMODULE_TOKEN: ${{ secrets.PRIVATE_SUBMODULE_TOKEN }}
         run: ./.github/scripts/Checkout-Submodules.ps1
       # Валидирует конфигурацию ДО restore/build.
-      # Outputs: solution_path, projects_json, subprojects_json, product,
-      # public_here, remote_json.
+      # Outputs: solution_path, projects_json, subprojects_json, modules_json,
+      # product, public_here, remote_json.
       - name: Read release configuration
         id: config
         shell: pwsh
@@ -224,6 +224,9 @@ jobs:
         env:
           PROJECTS_JSON: ${{ steps.config.outputs.projects_json }}
           PROJECT_TYPES_JSON: ${{ steps.publish.outputs.project_types_json }}
+          MODULES_JSON: ${{ steps.config.outputs.modules_json }}
+          GH_TOKEN: ${{ github.token }}
+          PRIVATE_SUBMODULE_TOKEN: ${{ secrets.PRIVATE_SUBMODULE_TOKEN }}
           PRODUCT: ${{ steps.config.outputs.product }}
           FULL_VERSION: ${{ steps.version.outputs.full_version }}
         run: ./.github/scripts/Stage-ReleaseFiles.ps1

@@ -180,6 +180,19 @@ $markdownName = "${env:PRODUCT}_${env:FULL_VERSION}.md"
 $stagedMarkdownPath = Join-Path $stagingDirectory $markdownName
 Copy-Item -LiteralPath $releaseNotesPath -Destination $stagedMarkdownPath -Force
 
+# Внешние modules добавляются после основного staging. Они получаются только
+# из опубликованных Release artifacts; исходный код модулей здесь не checkout-ится
+# и не собирается.
+if ([string]::IsNullOrWhiteSpace($env:MODULES_JSON) -or $env:MODULES_JSON -ne '[]') {
+    $moduleScript = Join-Path $env:GITHUB_WORKSPACE '.github/scripts/Add-ModuleReleaseArtifacts.ps1'
+    if (-not (Test-Path -LiteralPath $moduleScript -PathType Leaf)) {
+        throw "Module staging script was not found: $moduleScript"
+    }
+
+    $env:STAGING_DIRECTORY = $stagingDirectory
+    & $moduleScript
+}
+
 $stagedFiles = @(Get-ChildItem -LiteralPath $stagingDirectory -File -Recurse |
     ForEach-Object {
         $_.FullName.Substring($stagingDirectory.Length).TrimStart([char]'\', [char]'/')

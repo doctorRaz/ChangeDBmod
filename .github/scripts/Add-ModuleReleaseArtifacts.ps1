@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Adds immutable external module release artifacts to Mega Release staging.
+    Adds immutable external module release artifacts to Release staging.
 #>
 
 Set-StrictMode -Version Latest
@@ -10,12 +10,12 @@ $configPath = Join-Path $env:GITHUB_WORKSPACE $env:RELEASE_CONFIG_FILE
 $stagingDirectory = $env:STAGING_DIRECTORY
 
 if (-not (Test-Path -LiteralPath $configPath -PathType Leaf)) { throw "Release configuration was not found: $configPath" }
-if (-not (Test-Path -LiteralPath $stagingDirectory -PathType Container)) { throw "Mega staging directory was not found: $stagingDirectory" }
+if (-not (Test-Path -LiteralPath $stagingDirectory -PathType Container)) { throw "Release staging directory was not found: $stagingDirectory" }
 
 $config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json
-if ($null -eq $config.modules) { throw "Release configuration property 'modules' is required for Mega Release." }
+if ($null -eq $config.modules) { throw "Release configuration property 'modules' must be an array. Use [] when no external modules are configured." }
 $modules = @($config.modules)
-if ($modules.Count -eq 0) { Write-Host 'No Mega Release modules are configured.'; exit 0 }
+if ($modules.Count -eq 0) { Write-Host 'No external modules are configured.'; exit 0 }
 
 $destinationPaths = @{}
 foreach ($module in $modules) {
@@ -29,8 +29,10 @@ foreach ($module in $modules) {
         if ([string]::IsNullOrWhiteSpace($normalizedProject)) { throw "Module '$repository' contains an empty project path." }
         if ($normalizedProject -match '(^|/)\.\.(/|$)') { throw "Invalid project path '$project' in module '$repository'. Parent directory traversal is not allowed." }
         if ([System.IO.Path]::IsPathRooted($normalizedProject)) { throw "Invalid project path '$project' in module '$repository'. Rooted paths are not allowed." }
-        if ($destinationPaths.ContainsKey($normalizedProject)) { throw "Duplicate Mega Release project destination '$normalizedProject'." }
-        $destinationPaths[$normalizedProject] = $repository
+        $destinationName = [System.IO.Path]::GetFileName($normalizedProject)
+        if ([string]::IsNullOrWhiteSpace($destinationName) -or $destinationName -eq '.' -or $destinationName -eq '..') { throw "Invalid module project path '$project'." }
+        if ($destinationPaths.ContainsKey($destinationName)) { throw "Duplicate module project destination '$destinationName'." }
+        $destinationPaths[$destinationName] = $repository
     }
 }
 
@@ -38,18 +40,52 @@ $downloadRoot = Join-Path $env:RUNNER_TEMP ("MegaModules_" + $env:GITHUB_RUN_ID)
 New-Item -ItemType Directory -Path $downloadRoot -Force | Out-Null
 $lock = @()
 
+$originalGhToken = $env:GH_TOKEN
+
+function Invoke-GhWithFallback {
+    param(
+        [Parameter(Mandatory)][scriptblock]$Command,
+        [Parameter(Mandatory)][string]$Operation
+    )
+
+    $result = & $Command 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        return $result
+    }
+
+    if ([string]::IsNullOrWhiteSpace($env:PRIVATE_SUBMODULE_TOKEN)) {
+        throw "$Operation failed with GITHUB_TOKEN and PRIVATE_SUBMODULE_TOKEN is not configured."
+    }
+
+    $env:GH_TOKEN = $env:PRIVATE_SUBMODULE_TOKEN
+    try {
+        $result = & $Command
+        if ($LASTEXITCODE -ne 0) {
+            throw "$Operation failed with both GITHUB_TOKEN and PRIVATE_SUBMODULE_TOKEN."
+        }
+        return $result
+    }
+    finally {
+        $env:GH_TOKEN = $originalGhToken
+    }
+}
+
 function Get-LatestRelease {
     param([Parameter(Mandatory)][string]$Repository)
-    $json = gh api "repos/$Repository/releases/latest" --header "Accept: application/vnd.github+json"
-    if ($LASTEXITCODE -ne 0) { throw "Could not get latest published release for '$Repository'." }
+    $json = & {
+        Invoke-GhWithFallback -Operation "Could not get latest published release for '$Repository'." -Command {
+            gh api "repos/$Repository/releases/latest" --header "Accept: application/vnd.github+json"
+        }
+    }
     return ($json | ConvertFrom-Json)
 }
 
 function Download-Asset {
     param([Parameter(Mandatory)][string]$Repository,[Parameter(Mandatory)][string]$Tag,[Parameter(Mandatory)][string]$AssetName,[Parameter(Mandatory)][string]$Directory)
     New-Item -ItemType Directory -Path $Directory -Force | Out-Null
-    gh release download $Tag --repo $Repository --pattern $AssetName --dir $Directory --clobber
-    if ($LASTEXITCODE -ne 0) { throw "Could not download asset '$AssetName' from '$Repository' release '$Tag'." }
+    Invoke-GhWithFallback -Operation "Could not download asset '$AssetName' from '$Repository' release '$Tag'." -Command {
+        gh release download $Tag --repo $Repository --pattern $AssetName --dir $Directory --clobber
+    }
     $path = Join-Path $Directory $AssetName
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Downloaded asset was not found: $path" }
     return $path
@@ -88,17 +124,22 @@ function Get-ArchiveRootDirectory {
             if ($name -match '^([^/]+)/') { $matches[1] }
         } | Sort-Object -Unique
     )
-    if ($topLevelDirectories.Count -ne 1) { throw "Expected exactly one root directory in the selected artifact; found $($topLevelDirectories.Count)." }
+    if ($topLevelDirectories.Count -ne 1) { throw "Expected exactly one root directory in the selected module artifact; found $($topLevelDirectories.Count)." }
     return [string]$topLevelDirectories[0]
 }
 
 function Copy-ProjectFromZip {
-    param([Parameter(Mandatory)]$Archive,[Parameter(Mandatory)][string]$Project,[Parameter(Mandatory)][string]$ArchiveRoot,[Parameter(Mandatory)][string]$DestinationRoot)
+    param([Parameter(Mandatory)]$Archive,[Parameter(Mandatory)][string]$Project,[Parameter(Mandatory)][string]$DestinationRoot)
     $normalizedProject = $Project.Replace('\','/').Trim('/')
-    $projectPrefix = $ArchiveRoot.Trim('/') + '/' + $normalizedProject + '/'
+    $projectPrefix = $normalizedProject.Trim('/') + '/'
     $projectEntries = @($Archive.Entries | Where-Object { $_.FullName.Replace('\','/').StartsWith($projectPrefix, [System.StringComparison]::Ordinal) })
-    if ($projectEntries.Count -eq 0) { throw "Project directory '$ArchiveRoot/$Project' was not found in the selected artifact." }
-    foreach ($entry in $projectEntries) { Copy-ZipEntry -Entry $entry -DestinationRoot $DestinationRoot -StripPrefix $ArchiveRoot }
+    if ($projectEntries.Count -eq 0) { throw "Project directory '$normalizedProject' was not found in the selected artifact." }
+
+    $destinationName = [System.IO.Path]::GetFileName($normalizedProject)
+    $projectDestination = Join-Path $DestinationRoot $destinationName
+    foreach ($entry in $projectEntries) {
+        Copy-ZipEntry -Entry $entry -DestinationRoot $projectDestination -StripPrefix $normalizedProject
+    }
 }
 
 Add-Type -AssemblyName System.IO.Compression
@@ -108,7 +149,7 @@ for ($moduleIndex = 0; $moduleIndex -lt $modules.Count; $moduleIndex++) {
     $module = $modules[$moduleIndex]
     $repository = [string]$module.repository
     $projects = @($module.projects) | ForEach-Object { ([string]$_).Replace('\','/').Trim('/') }
-    Write-Host ("=== Mega module repository: " + $repository + " ===")
+    Write-Host ("=== External module repository: " + $repository + " ===")
     Write-Host ("Projects: " + ($projects -join ', '))
 
     $release = Get-LatestRelease -Repository $repository
@@ -135,7 +176,7 @@ for ($moduleIndex = 0; $moduleIndex -lt $modules.Count; $moduleIndex++) {
         Write-Host ("Archive root: " + $archiveRoot)
         foreach ($project in $projects) {
             Write-Host ("Extracting project: " + $project)
-            Copy-ProjectFromZip -Archive $archive -Project $project -ArchiveRoot $archiveRoot -DestinationRoot (Join-Path $stagingDirectory $env:PRODUCT)
+            Copy-ProjectFromZip -Archive $archive -Project $project -DestinationRoot (Join-Path $stagingDirectory $env:PRODUCT)
         }
 
         $rootMarkdown = @($archive.Entries | Where-Object {
@@ -156,6 +197,6 @@ for ($moduleIndex = 0; $moduleIndex -lt $modules.Count; $moduleIndex++) {
 
 $lockPath = Join-Path $env:RUNNER_TEMP ("mega-modules-" + $env:GITHUB_RUN_ID + ".lock.json")
 $lock | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $lockPath -Encoding utf8NoBOM
-Write-Host '=== Mega module selection ==='
+Write-Host '=== External module selection ==='
 $lock | Format-Table -AutoSize | Out-String | Write-Host
-Write-Host ("Module lock: " + $lockPath)
+Write-Host ("Module selection lock: " + $lockPath)
