@@ -1,11 +1,5 @@
 
 
-#if NC26
-using MC = Multicad.ApplicationServices;
-#else
-using MC = Multicad.AplicationServices;
-#endif
-
 
 #if NC
 
@@ -62,8 +56,48 @@ namespace drz.ChangeDBmod
 
             if (Ed.PromptStatus.OK == pr.Status)
             {
-                _ = MC.McParamManager.SetParam(pr.StringResult, 9);
+                SetMulticadParam(pr.StringResult, 9);
             }
+
+        }
+
+        /// <summary>
+        /// Вызывает McParamManager.SetParam без compile-time зависимости от версии Multicad.
+        /// </summary>
+        private static void SetMulticadParam(string value, int parameter)
+        {
+            string[] typeNames =
+            {
+                "Multicad.ApplicationServices.McParamManager",
+                "Multicad.AplicationServices.McParamManager"
+            };
+
+            foreach (string typeName in typeNames)
+            {
+                foreach (System.Reflection.Assembly assembly in System.AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    System.Type type = assembly.GetType(typeName);
+                    if (type == null)
+                    {
+                        continue;
+                    }
+
+                    System.Reflection.MethodInfo method = type.GetMethod(
+                        "SetParam",
+                        new[] { typeof(string), typeof(int) });
+
+                    if (method == null)
+                    {
+                        continue;
+                    }
+
+                    _ = method.Invoke(null, new object[] { value, parameter });
+                    return;
+                }
+            }
+
+            throw new System.InvalidOperationException("McParamManager.SetParam не найден.");
+        }
             //Example switch other database;
             //string oldBd = Multicad.AplicationServices.McParamManager.GetStringParam(9);//получаем путь свойства базы текущего приложения
 
