@@ -65,12 +65,10 @@ namespace drz.ChangeDBmod
 
                 if (_multicadParam == null)
                 {
-                    throw new InvalidOperationException("McNotificator.McParamManager не найден");
+                    throw new InvalidOperationException("McParamManager.SetParam не найден");
                 }
-                //посмотри этот вызов
-                _multicadParam.Invoke(null, new object[] { pr.StringResult, 9 });;
-
-                SetMulticadParam(pr.StringResult, 9);
+                object value = pr.StringResult;
+                _multicadParam.Invoke(null, new object[] { value, 9 });
             }
 
         }
@@ -78,90 +76,43 @@ namespace drz.ChangeDBmod
 
         private static MethodInfo FindMulticadParam()
         {
-            Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
+            Stopwatch sw = Stopwatch.StartNew();
 
             foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
                 try
                 {
                     Type type =
-                        assembly.GetType("Multicad.ApplicationServices.McParamManager")
-                     ?? assembly.GetType("Multicad.AplicationServices.McParamManager");
+                        assembly.GetType("Multicad.ApplicationServices.McParamManager", false)
+                        ?? assembly.GetType("Multicad.AplicationServices.McParamManager", false);
 
-                    if (type != null)
-                    {
-                        sw.Stop();
-                        System.Diagnostics.Debug.WriteLine(
-                            $"McParamManager найден за {sw.ElapsedMilliseconds} мс"
-                        );
-
-                        //ретурн неверный исправь
-                        return type.GetMethod("CreateMessage", new[] { typeof(string) });
-                    }
-                }
-                catch { } // Пропускаем нативные и смешанные сборки
-            }
-
-            sw.Stop();
-            System.Diagnostics.Debug.WriteLine(
-                $"McNotificator не найден, поиск занял {sw.ElapsedMilliseconds} мс");
-
-            return null;
-        }
-
-
-        /// <summary>
-        /// Вызывает McParamManager.SetParam без compile-time зависимости от версии Multicad.
-        /// </summary>
-        private static void SetMulticadParam(string value, int parameter)
-        {
-            string[] typeNames =
-            {
-                "Multicad.ApplicationServices.McParamManager",
-                "Multicad.AplicationServices.McParamManager"
-            };
-
-            foreach (string typeName in typeNames)
-            {
-                foreach (System.Reflection.Assembly assembly in System.AppDomain.CurrentDomain.GetAssemblies())
-                {
-                    System.Type type = assembly.GetType(typeName);
                     if (type == null)
                     {
                         continue;
                     }
 
-                    System.Reflection.MethodInfo method = type.GetMethod(
+                    MethodInfo method = type.GetMethod(
                         "SetParam",
-                        new[] { typeof(string), typeof(int) });
+                        new[] { typeof(object).MakeByRefType(), typeof(int) });
 
-                    if (method == null)
+                    if (method != null)
                     {
-                        continue;
+                        sw.Stop();
+                        Debug.WriteLine(
+                            $"McParamManager.SetParam найден за {sw.ElapsedMilliseconds} мс"
+                        );
+                        return method;
                     }
-
-                    _ = method.Invoke(null, new object[] { value, parameter });
-                    return;
+                }
+                catch
+                {
+                    // Пропускаем нативные и смешанные сборки.
                 }
             }
 
-            throw new System.InvalidOperationException("McParamManager.SetParam не найден.");
+            sw.Stop();
+            Debug.WriteLine(
+                $"McParamManager.SetParam не найден, поиск занял {sw.ElapsedMilliseconds} мс");
+
+            return null;
         }
-
-            //Example switch other database;
-            //string oldBd = Multicad.AplicationServices.McParamManager.GetStringParam(9);//получаем путь свойства базы текущего приложения
-
-            //string sMDF = "z:\\BD_SQL\\nana\\std.mdf";//local *.mdf
-            //bool bsetBD = Multicad.AplicationServices.McParamManager.SetParam(sMDF, 9);
-
-            //string sSQL = "SQL:C-VGDSQL03:mc_spds9";
-            //bsetBD = Multicad.AplicationServices.McParamManager.SetParam(sSQL, 9);
-
-            //string sPSQL = "pgsql:nspds240";
-            //bsetBD = Multicad.AplicationServices.McParamManager.SetParam(sPSQL, 9);
-
-        #endregion
-
-    }
-
-}
