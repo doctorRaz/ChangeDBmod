@@ -6,9 +6,9 @@
     Итоговая структура staging:
 
         <SolutionName>/
-            <MainFirstProjectName>/
+            <PublishGroupName>/
                 <файлы всех основных проектов>
-            <SubProjectFirstProjectName>/
+            <SubProjectGroupName>/
                 <файлы всех проектов subProject>
             <содержимое assets с сохранением структуры>
         <Product>_<Version>.md
@@ -30,11 +30,6 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$projectPaths = @($env:PROJECTS_JSON | ConvertFrom-Json)
-if ($projectPaths.Count -eq 0) {
-    throw 'PROJECTS_JSON does not contain any projects.'
-}
-
 $projectTypes = @($env:PROJECT_TYPES_JSON | ConvertFrom-Json)
 if ($projectTypes.Count -eq 0) {
     throw 'PROJECT_TYPES_JSON does not contain any projects.'
@@ -49,13 +44,7 @@ if ([string]::IsNullOrWhiteSpace($solutionName)) {
     throw 'PRODUCT is empty; cannot determine solution directory.'
 }
 
-# Первый основной проект определяет каталог основной группы.
-$mainGroupName = [System.IO.Path]::GetFileNameWithoutExtension([string]$projectPaths[0])
-if ([string]::IsNullOrWhiteSpace($mainGroupName)) {
-    throw "Could not determine main project group name from: $($projectPaths[0])"
-}
-
-$stagingDirectory = Join-Path $env:RUNNER_TEMP "Stage_$($env:PRODUCT)_$($env:FULL_VERSION)"
+$stagingDirectory = Join-Path $env:GITHUB_WORKSPACE 'staging'
 $solutionDirectory = Join-Path $stagingDirectory $solutionName
 
 Remove-Item -LiteralPath $stagingDirectory -Recurse -Force -ErrorAction SilentlyContinue
@@ -71,46 +60,34 @@ if (-not (Test-Path -LiteralPath $releaseNotesPath -PathType Leaf)) {
     throw "Release notes were not found: $releaseNotesPath"
 }
 
-# Каждый publish-проект получает собственную запись с абсолютным корнем.
-# Path используется как ключ, чтобы одинаковые имена проектов в разных
-# группах не смешивали результаты staging.
 $projectRoots = @()
-foreach ($projectPath in $projectPaths) {
-    $projectPathText = [string]$projectPath
-    $metadata = @($projectTypes | Where-Object { $_.Path -eq $projectPathText })
-    if ($metadata.Count -ne 1) {
-        throw "Project type metadata is missing or duplicated for project: $projectPathText"
-    }
-
-    $projectRoots += [pscustomobject]@{
-        Path      = $projectPathText
-        Name      = [string]$metadata[0].Name
-        Type      = [string]$metadata[0].Type
-        GroupName = [string]$metadata[0].GroupName
-        GroupKind = [string]$metadata[0].GroupKind
-        Root      = (Join-Path $publishRoot ([string]$metadata[0].Name))
-    }
-}
-
-# Добавляем subProject roots из metadata. Их assets намеренно не сканируются:
-# publish-каталог содержит только результаты dotnet publish.
 foreach ($metadata in $projectTypes) {
-    if ($metadata.GroupKind -ne 'SubProject') {
-        continue
+    $projectPathText = [string]$metadata.Path
+    $projectName = [string]$metadata.Name
+    $groupName = [string]$metadata.GroupName
+    $groupKind = [string]$metadata.GroupKind
+    $projectType = [string]$metadata.Type
+
+    if ([string]::IsNullOrWhiteSpace($projectPathText) -or
+        [string]::IsNullOrWhiteSpace($projectName) -or
+        [string]::IsNullOrWhiteSpace($groupName) -or
+        [string]::IsNullOrWhiteSpace($groupKind) -or
+        [string]::IsNullOrWhiteSpace($projectType)) {
+        throw 'PROJECT_TYPES_JSON contains incomplete project metadata.'
     }
 
-    $existing = @($projectRoots | Where-Object { $_.Path -eq [string]$metadata.Path })
-    if ($existing.Count -gt 0) {
-        continue
+    $projectRoot = Join-Path $publishRoot $projectName
+    if (-not (Test-Path -LiteralPath $projectRoot -PathType Container)) {
+        throw "Published project directory was not found: $projectRoot"
     }
 
     $projectRoots += [pscustomobject]@{
-        Path      = [string]$metadata.Path
-        Name      = [string]$metadata.Name
-        Type      = [string]$metadata.Type
-        GroupName = [string]$metadata.GroupName
-        GroupKind = [string]$metadata.GroupKind
-        Root      = (Join-Path $publishRoot ([string]$metadata.Name))
+        Path = $projectPathText
+        Name = $projectName
+        Type = $projectType
+        GroupName = $groupName
+        GroupKind = $groupKind
+        Root = $projectRoot
     }
 }
 
@@ -143,9 +120,7 @@ foreach ($file in $files) {
         continue
     }
 
-    # Каталог назначения определяется группой, а не отдельным проектом.
-    # Поэтому ProjectA1 и ProjectA2 из одной группы физически объединяются
-    # в каталоге ProjectA1, сохраняя внутренние подпапки publish.
+    # Каталог назначения определяется явно заданной группой публикации.
     $groupDirectory = Join-Path $solutionDirectory $matchedProject.GroupName
     $relativePath = $file.FullName.Substring($matchedProject.Root.Length).TrimStart([char]'\', [char]'/')
     $destinationPath = Join-Path $groupDirectory $relativePath

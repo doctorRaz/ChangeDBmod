@@ -51,7 +51,7 @@ jobs:
           PRIVATE_SUBMODULE_TOKEN: ${{ secrets.PRIVATE_SUBMODULE_TOKEN }}
         run: ./.github/scripts/Checkout-Submodules.ps1
       # Валидирует конфигурацию ДО restore/build.
-      # Outputs: solution_path, projects_json, subprojects_json, modules_json,
+      # Результаты: solution_path, publish_json, subprojects_json, modules_json,
       # product, public_here, remote_json.
       - name: Read release configuration
         id: config
@@ -88,10 +88,13 @@ jobs:
         id: version
         shell: pwsh
         env:
-          PROJECTS_JSON: ${{ steps.config.outputs.projects_json }}
+          PUBLISH_JSON: ${{ steps.config.outputs.publish_json }}
         run: |
-          $projectPaths = $env:PROJECTS_JSON | ConvertFrom-Json
-          $versionProject = @($projectPaths)[0]
+          $publishGroups = @($env:PUBLISH_JSON | ConvertFrom-Json)
+          if ($publishGroups.Count -eq 0 -or @($publishGroups[0].projects).Count -eq 0) {
+              throw 'PUBLISH_JSON does not contain a project for version calculation.'
+          }
+          $versionProject = [string]@($publishGroups[0].projects)[0]
 
           $baseVersion = (dotnet msbuild "$versionProject" -getProperty:Version).Trim()
           if ([string]::IsNullOrWhiteSpace($baseVersion)) {
@@ -146,7 +149,7 @@ jobs:
         id: publish
         shell: pwsh
         env:
-          PROJECTS_JSON: ${{ steps.config.outputs.projects_json }}
+          PUBLISH_JSON: ${{ steps.config.outputs.publish_json }}
           SUBPROJECTS_JSON: ${{ steps.config.outputs.subprojects_json }}
           BUILD: ${{ steps.version.outputs.build }}
           REVISION: ${{ steps.version.outputs.revision }}
@@ -208,7 +211,7 @@ jobs:
               "minimum_version_json=$($minimumVersion | ConvertTo-Json -Compress)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
           }
 
-      # Notes создаются до staging, поэтому release-notes.md входит в оба
+      # Заметки создаются до staging, поэтому release-notes.md входит в оба
       # финальных архива и участвует в расчёте их SHA-256.
       - name: Generate release notes
         shell: pwsh
@@ -216,13 +219,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: ./.github/scripts/New-ReleaseNotes.ps1
 
-      # Формирует единый staging после создания notes. Дальше staging больше
+      # Формирует единый staging после создания заметок. Дальше staging больше
       # не изменяется: оба архива создаются из абсолютно одного набора файлов.
       - name: Stage release files
         id: stage
         shell: pwsh
         env:
-          PROJECTS_JSON: ${{ steps.config.outputs.projects_json }}
+          PUBLISH_JSON: ${{ steps.config.outputs.publish_json }}
           PROJECT_TYPES_JSON: ${{ steps.publish.outputs.project_types_json }}
           MODULES_JSON: ${{ steps.config.outputs.modules_json }}
           GH_TOKEN: ${{ github.token }}
@@ -231,7 +234,7 @@ jobs:
           FULL_VERSION: ${{ steps.version.outputs.full_version }}
         run: ./.github/scripts/Stage-ReleaseFiles.ps1
 
-      # Создаёт обычный ZIP и пароль-защищённый 7z. Manifest здесь намеренно
+      # Создаёт обычный ZIP и пароль-защищённый 7z. Манифест здесь намеренно
       # не создаётся: он должен содержать метаданные уже готовых архивов.
       - name: Create release archives
         id: archives
@@ -242,7 +245,7 @@ jobs:
           STAGING_DIRECTORY: ${{ steps.stage.outputs.staging_directory }}
         run: ./.github/scripts/New-ReleaseArchives.ps1
 
-      # Manifest строится только из метаданных готовых архивов. Повторной
+      # Манифест строится только из метаданных готовых архивов. Повторной
       # упаковки здесь нет, поэтому SHA-256 в update.json точно соответствует
       # опубликованным файлам.
       - name: Create update manifest
@@ -275,7 +278,7 @@ jobs:
         run: ./.github/scripts/New-Release.ps1 -Repository $env:GITHUB_REPOSITORY -VerifyTag
 
       # Один и тот же набор финальных архивов и update.json публикуется во
-      # все configured remotes без повторной сборки.
+      # все настроенные удалённые репозитории без повторной сборки.
       - name: Publish release to configured repositories
         if: steps.config.outputs.remote_json != '[]'
         shell: pwsh
