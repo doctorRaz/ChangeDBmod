@@ -1,46 +1,100 @@
 # ChangeDBmod
->Disclaimer \
-[В начале разработки]
 
-Вы тестируете этот код на свой страх и риск\
-Если что то поломается я не виноват
+Дополнение для nanoCAD и AutoCAD + СПДС CS / Механика CS, позволяющее переключать базы данных MultiCAD из командной строки.
 
- ## [Описание проекта](https://deepwiki.com/doctorRaz/ChangedbMod) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/doctorRaz/ChangedbMod)
- 
-## Сборки для:
-- `ChangeDBmod.NC` загрузчик сборок для nanoCad 21-26 
-	> независимо от версии nanoCad в автозагрузку включаем только его, он сам загрузит подходящую сборку nanoCad
-- `ChangeDBmod.NC.21.0` nanoCad 21-25
-- `ChangeDBmod.NC.26.0` nanoCad 26
-- `ChangedbMod.AC.2018.0` AutoCAD 2018 и новее + c _СПДС CS_ или _Механика CS_
+> **Статус:** проект находится в разработке. Используйте на свой риск и проверяйте совместимость со своей версией CAD.
 
-### Загрузить сборку для своего CAD
-- nanoCAD `appload`  -> `ChangeDBmod.NC.dll`
-- AutoCAD `netload` ->`ChangedbMod.AC.2018.0.dll`
-  
-## Назначение: переключение между базами данных MultiCAD
- ### Вызов 
- > `drz_changedb`	Переключение базы данных MultiCAD
+## Описание
 
-### Пример использования
+ChangeDBmod добавляет команду:
+
+`drz_changedb` — переключение базы данных MultiCAD.
+
+В отличие от штатных команд `SPchangedb` и `MCchangedb`, команда доступна непосредственно из платформы. Также поддерживаются пути с пробелами.
+
+Подробное техническое описание проекта: [DeepWiki](https://deepwiki.com/doctorRaz/ChangedbMod).
+
+## Поддерживаемые CAD
+
+| Проект | Назначение |
+|---|---|
+| `ChangeDBmod.NC` | загрузчик для nanoCAD 21–26 |
+| `ChangeDBmod.NC.21.0` | сборка для nanoCAD 21–25 |
+| `ChangeDBmod.NC.26.0` | сборка для nanoCAD 26 |
+| `ChangeDBmod.AC2018` | AutoCAD 2018 и новее + СПДС CS / Механика CS |
+
+### nanoCAD
+
+Для nanoCAD в автозагрузку устанавливается `ChangeDBmod.NC.dll`. Загрузчик самостоятельно выбирает подходящую сборку для установленной версии nanoCAD.
+
+Загрузка вручную:
+
+`appload` → `ChangeDBmod.NC.dll`
+
+### AutoCAD
+
+Для AutoCAD используется:
+
+`netload` → `ChangeDBmod.AC2018.0.dll`
+
+## Использование
+
+Команда:
+
+```text
+drz_changedb
 ```
-;база local SQL
+
+### Примеры
+
+Локальная SQL-база:
+
+```lisp
 (vl-cmdf "drz_changedb" "z:\\BD SQL\\nana\\std.mdf")
+```
 
-;PostgreSQL
+PostgreSQL:
+
+```lisp
 (vl-cmdf "drz_changedb" "pgsql:nspds240")
+```
 
-; MS SQL
+MS SQL:
+
+```lisp
 (vl-cmdf "drz_changedb" "SQL:SERVER:mc_spds9")
 ```
 
-### Зачем я заморочился?
+## Сборка из исходников
 
-naanoCAD и AutoCAD +СПДС CS умеют переключать базу стандартных из ком строки, но это доступно только из СПДС или Механики, команды соответственно  `SPchangedb` и `MCchangedb`, из платформы недоступно.\
-Кроме этого в штатной команде есть баг: не принимает пути с пробелом.
+Решение: `ChangeDBmod.sln`.
 
-Этот аддон лишен этого недостатка и дает возможность пользователям платформы переключать базы Multicad из ком строки.
+Тестовый проект: `ChangeDBmod.Tests`.
 
+Запуск тестов:
 
+```powershell
+dotnet test ChangeDBmod.Tests/ChangeDBmod.Tests.csproj
+```
 
+Для сборки решения:
 
+```powershell
+dotnet build ChangeDBmod.sln
+```
+
+Для разработки CAD-сборок должны быть доступны соответствующие зависимости и средства сборки .NET Framework.
+
+## Автоматические сборки и публикация
+
+В репозитории используются GitHub Actions:
+
+- `ci.yml` — проверка сборки и тестов;
+- `create-release-tag.yml` — создание release tag;
+- `release.yml` — сборка и публикация релиза.
+
+Готовые опубликованные версии доступны в разделе [Releases](https://github.com/oiltest90-dev/ChangeDBmod-dev/releases).
+
+## Лицензия
+
+Проект распространяется по лицензии [MIT License](LICENSE).
