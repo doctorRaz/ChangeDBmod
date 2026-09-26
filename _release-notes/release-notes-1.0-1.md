@@ -15,10 +15,24 @@ ChangeDBmod — дополнение для работы с базами дан�
 - Передача путей и значений, содержащих пробелы.
 - Использование API ChangeDBmod из других .NET-сборок без прямой зависимости от конкретной версии API MultiCAD.
 
-### Пример
+### Примеры
+
+Локальная SQL-база:
 
 ```lisp
 (vl-cmdf "drz_changedb" "z:\\BD SQL\\nana\\std.mdf")
+```
+
+PostgreSQL:
+
+```lisp
+(vl-cmdf "drz_changedb" "pgsql:nspds240")
+```
+
+MS SQL:
+
+```lisp
+(vl-cmdf "drz_changedb" "SQL:SERVER:mc_spds9")
 ```
 
 Также API можно использовать непосредственно из другой сборки:
