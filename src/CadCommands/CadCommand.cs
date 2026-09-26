@@ -1,5 +1,8 @@
 
 
+using System;
+using System.Diagnostics;
+using System.Reflection;
 
 #if NC
 
@@ -23,6 +26,9 @@ namespace drz.ChangeDBmod
     /// </summary>
     class CadCommand : Rtm.IExtensionApplication
     {
+
+    private static readonly MethodInfo _multicadParam = FindMulticadParam();
+
         #region INIT
         public void Initialize()
         {
@@ -56,10 +62,53 @@ namespace drz.ChangeDBmod
 
             if (Ed.PromptStatus.OK == pr.Status)
             {
+
+                if (_multicadParam == null)
+                {
+                    throw new InvalidOperationException("McNotificator.McParamManager не найден");
+                }
+                //посмотри этот вызов
+                _multicadParam.Invoke(null, new object[] { pr.StringResult, 9 });;
+
                 SetMulticadParam(pr.StringResult, 9);
             }
 
         }
+
+
+        private static MethodInfo FindMulticadParam()
+        {
+            Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
+
+            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                try
+                {
+                    Type type =
+                        assembly.GetType("Multicad.ApplicationServices.McParamManager")
+                     ?? assembly.GetType("Multicad.AplicationServices.McParamManager");
+
+                    if (type != null)
+                    {
+                        sw.Stop();
+                        System.Diagnostics.Debug.WriteLine(
+                            $"McParamManager найден за {sw.ElapsedMilliseconds} мс"
+                        );
+
+                        //ретурн неверный исправь
+                        return type.GetMethod("CreateMessage", new[] { typeof(string) });
+                    }
+                }
+                catch { } // Пропускаем нативные и смешанные сборки
+            }
+
+            sw.Stop();
+            System.Diagnostics.Debug.WriteLine(
+                $"McNotificator не найден, поиск занял {sw.ElapsedMilliseconds} мс");
+
+            return null;
+        }
+
 
         /// <summary>
         /// Вызывает McParamManager.SetParam без compile-time зависимости от версии Multicad.
