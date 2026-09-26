@@ -42,5 +42,27 @@ naanoCAD и AutoCAD +СПДС CS умеют переключать базу ст
 Этот аддон лишен этого недостатка и дает возможность пользователям платформы переключать базы Multicad из ком строки.
 
 
+примеры вызова
 
+Example switch other database;
+```
+string oldBd = Multicad.AplicationServices.McParamManager.GetStringParam(9);//получаем путь свойства базы текущего приложения
+```
+
+```
+string sMDF = "z:\\BD_SQL\\nana\\std.mdf";//local *.mdf
+bool bsetBD = Multicad.AplicationServices.McParamManager.SetParam(sMDF, 9);
+```
+
+```
+string sSQL = "SQL:C-VGDSQL03:mc_spds9";
+bsetBD = Multicad.AplicationServices.McParamManager.SetParam(sSQL, 9);
+```
+
+
+```
+string sPSQL = "pgsql:nspds240";
+bsetBD = Multicad.AplicationServices.McParamManager.SetParam(sPSQL, 9);
+
+```
 
