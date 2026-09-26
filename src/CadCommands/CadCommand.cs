@@ -1,4 +1,4 @@
-using System;
+using drz.ChangeDBmod.MulticadInterop;
 
 #if NC
 

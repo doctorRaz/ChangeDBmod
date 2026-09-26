@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Reflection;
 
-namespace drz.ChangeDBmod
+namespace drz.ChangeDBmod.MulticadInterop
 {
     /// <summary>
     /// Предоставляет доступ к API Multicad без compile-time зависимости

@@ -8,7 +8,7 @@
 		<!-- Короткий идентификатор разработчика -->
 		<Vendor>dRz</Vendor>
 		<!--RootNamespace default-->
-		<RootNamespace>$(Vendor).$(MSBuildProjectName)</RootNamespace>
+		<RootNamespace>$(Vendor).$(SolutionName)</RootNamespace>
 		<!-- Версия языка -->
 		<LangVersion>latest</LangVersion>
 		<!-- Nullable Reference Types -->
