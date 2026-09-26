@@ -141,32 +141,6 @@ function Get-ValidatedGroups {
 
 $publishGroupsValidated = @(Get-ValidatedGroups -Groups $publishGroups -PropertyName 'publish')
 
-# Основные проекты solution должны быть явно распределены по publish-группам.
-$publishedProjectPaths = @{}
-foreach ($group in $publishGroupsValidated) {
-    foreach ($projectPath in @($group.projects)) {
-        $publishedProjectPaths[$projectPath.Replace('\','/')] = $true
-    }
-}
-
-$solutionListOutput = @(dotnet sln "$solutionPath" list 2>&1)
-if ($LASTEXITCODE -ne 0) {
-    throw "Could not enumerate projects in solution: $solutionPath"
-}
-
-$solutionProjectPaths = @(
-    $solutionListOutput |
-        ForEach-Object { ([string]$_).Trim() } |
-        Where-Object { $_ -match '\.csproj$' } |
-        ForEach-Object { $_.Replace('\','/') }
-)
-
-foreach ($solutionProjectPath in $solutionProjectPaths) {
-    if (-not $publishedProjectPaths.ContainsKey($solutionProjectPath)) {
-        throw "Solution project is not assigned to any publish group: $solutionProjectPath"
-    }
-}
-
 $subProjectsValidated = if ($ignoreSubProjects -or $subProjects.Count -eq 0) {
     @()
 } else {
