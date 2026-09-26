@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChangeDBmod.AC2018+", "Chan
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChangeDBmod.NC.21+", "ChangeDBmod.NC.21\ChangeDBmod.NC.21+.csproj", "{B7830ADF-508D-4A43-B4AE-7BF0CDD35430}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChangedbMod.Tests", "ChangedbMod.Tests\ChangedbMod.Tests.csproj", "{7E5D0B77-6B0B-4C74-9D1D-5F5B4A1A0E3A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChangeDBmod.Tests", "ChangeDBmod.Tests\ChangeDBmod.Tests.csproj", "{7E5D0B77-6B0B-4C74-9D1D-5F5B4A1A0E3A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
