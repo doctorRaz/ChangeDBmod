@@ -9,7 +9,6 @@ using Rtm = Teigha.Runtime;
 #elif AC
 
 using App = Autodesk.AutoCAD.ApplicationServices;
-//using Db = Autodesk.AutoCAD.DatabaseServices;
 using Ed = Autodesk.AutoCAD.EditorInput;
 using Rtm = Autodesk.AutoCAD.Runtime;
 
