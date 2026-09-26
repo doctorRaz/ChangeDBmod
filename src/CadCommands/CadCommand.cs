@@ -27,9 +27,8 @@ namespace drz.ChangeDBmod
     class CadCommand : Rtm.IExtensionApplication
     {
 
-    private static readonly MethodInfo _multicadParam = FindMulticadParam();
+        private static readonly MethodInfo _multicadParam = FindMulticadParam();
 
-        #region INIT
         public void Initialize()
         {
         }
@@ -39,9 +38,6 @@ namespace drz.ChangeDBmod
             // throw new System.NotImplementedException();
         }
 
-        #endregion
-
-        #region Command
 
 
         /// <summary>
@@ -116,3 +112,5 @@ namespace drz.ChangeDBmod
 
             return null;
         }
+    }
+}
