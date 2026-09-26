@@ -1,5 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-	<Import Project="..\Shared.props" Condition="Exists('..\Shared.props')"/>
+	<Import Project="..\Shared.props" Condition="Exists('..\Shared.props')" />
 	<PropertyGroup>
 		<TargetFramework>net462-windows</TargetFramework>
 		<Description>Переключалка баз Multicad для nanoCAD 21+</Description>
@@ -10,8 +10,7 @@
 		<DefineConstants>$(DefineConstants);$(HostFamily)</DefineConstants>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="MultiCAD.NET" Version="21.0.5699.3427"/>
-		<PackageReference Include="nanoCAD.Platform.NET" Version="21.0.5699.3427"/>
+		<PackageReference Include="nanoCAD.Platform.NET" Version="21.0.5699.3427" />
 	</ItemGroup>
 	
 </Project>
