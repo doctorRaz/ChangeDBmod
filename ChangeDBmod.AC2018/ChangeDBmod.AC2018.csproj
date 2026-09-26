@@ -2,7 +2,7 @@
 	<Import Project="..\Shared.props" Condition="Exists('..\Shared.props')"/>
 	<PropertyGroup>
 		<TargetFramework>net48-windows</TargetFramework>
-		<Description>Переключалка баз Multicad для AutoCAD 2018 и новее</Description>
+		<Description>Переключалка баз Multicad для AutoCAD 2018+</Description>
 		<HostFamily>AC</HostFamily>
 		<HostCode>a</HostCode>
 	</PropertyGroup>
