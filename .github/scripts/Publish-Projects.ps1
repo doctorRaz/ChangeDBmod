@@ -24,15 +24,15 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$mainProjects = @($env:PROJECTS_JSON | ConvertFrom-Json)
+$publishGroups = @($env:PUBLISH_JSON | ConvertFrom-Json)
 $subProjects = if ([string]::IsNullOrWhiteSpace($env:SUBPROJECTS_JSON)) {
     @()
 } else {
     @($env:SUBPROJECTS_JSON | ConvertFrom-Json)
 }
 
-if ($mainProjects.Count -eq 0) {
-    throw 'PROJECTS_JSON does not contain any projects.'
+if ($publishGroups.Count -eq 0) {
+    throw 'PUBLISH_JSON does not contain any release groups.'
 }
 
 $publishRoot = Join-Path $env:GITHUB_WORKSPACE 'publish'
@@ -142,24 +142,31 @@ function Publish-ReleaseProject {
     Write-Host "Published $($publishedFiles.Count) file(s) for: $ProjectPath"
 }
 
-# Основная группа сохраняет прежнюю семантику: её каталог определяется
-# первым проектом списка projects.
-$mainGroupName = [System.IO.Path]::GetFileNameWithoutExtension([string]$mainProjects[0])
-foreach ($projectPath in $mainProjects) {
-    Publish-ReleaseProject -ProjectPath ([string]$projectPath) -GroupName $mainGroupName -GroupKind 'Main'
-}
+foreach ($group in $publishGroups) {
+    $groupName = [string]$group.name
+    $groupProjects = @($group.projects)
 
-# Каждая subProjects запись является отдельной логической группой. Первый
-# проект записи определяет имя каталога группы в итоговом архиве.
-foreach ($subProject in $subProjects) {
-    $groupProjects = @($subProject.projects)
+    if ([string]::IsNullOrWhiteSpace($groupName)) {
+        throw 'Each publish group must contain a name.'
+    }
     if ($groupProjects.Count -eq 0) {
-        throw 'Each subProjects entry must contain at least one project.'
+        throw "Publish group '$groupName' does not contain any projects."
     }
 
-    $groupName = [System.IO.Path]::GetFileNameWithoutExtension([string]$groupProjects[0])
+    foreach ($projectPath in $groupProjects) {
+        Publish-ReleaseProject -ProjectPath ([string]$projectPath) -GroupName $groupName -GroupKind 'Main'
+    }
+}
+
+foreach ($subProject in $subProjects) {
+    $groupName = [string]$subProject.name
+    $groupProjects = @($subProject.projects)
+
     if ([string]::IsNullOrWhiteSpace($groupName)) {
-        throw "Could not determine subproject group name from: $($groupProjects[0])"
+        throw 'Each subProjects group must contain a name.'
+    }
+    if ($groupProjects.Count -eq 0) {
+        throw "SubProjects group '$groupName' does not contain any projects."
     }
 
     foreach ($projectPath in $groupProjects) {
