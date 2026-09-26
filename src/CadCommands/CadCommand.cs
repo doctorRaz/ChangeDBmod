@@ -1,5 +1,3 @@
-
-
 using System;
 using System.Diagnostics;
 using System.Reflection;
@@ -11,6 +9,7 @@ using Ed = HostMgd.EditorInput;
 using Rtm = Teigha.Runtime;
 
 #elif AC
+
 using App = Autodesk.AutoCAD.ApplicationServices;
 using Db = Autodesk.AutoCAD.DatabaseServices;
 using Ed = Autodesk.AutoCAD.EditorInput;
@@ -21,12 +20,11 @@ using Rtm = Autodesk.AutoCAD.Runtime;
 
 namespace drz.ChangeDBmod
 {
-    /// <summary> 
-    /// Команды 
+    /// <summary>
+    /// Команды
     /// </summary>
-    class CadCommand : Rtm.IExtensionApplication
+    internal class CadCommand : Rtm.IExtensionApplication
     {
-
         private static readonly MethodInfo _multicadParam = FindMulticadParam();
 
         public void Initialize()
@@ -37,8 +35,6 @@ namespace drz.ChangeDBmod
         {
             // throw new System.NotImplementedException();
         }
-
-
 
         /// <summary>
         /// Переключатель баз MultiCad
@@ -58,7 +54,6 @@ namespace drz.ChangeDBmod
 
             if (Ed.PromptStatus.OK == pr.Status)
             {
-
                 if (_multicadParam == null)
                 {
                     throw new InvalidOperationException("McParamManager.SetParam не найден");
@@ -66,9 +61,7 @@ namespace drz.ChangeDBmod
                 object value = pr.StringResult;
                 _multicadParam.Invoke(null, new object[] { value, 9 });
             }
-
         }
-
 
         private static MethodInfo FindMulticadParam()
         {

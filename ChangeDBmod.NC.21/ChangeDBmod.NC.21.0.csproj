@@ -2,7 +2,7 @@
 	<Import Project="..\Shared.props" Condition="Exists('..\Shared.props')"/>
 	<PropertyGroup>
 		<TargetFramework>net462-windows</TargetFramework>
-		<Description>Переключалка баз Multicad для nanoCAD 21-25</Description>
+		<Description>Переключалка баз Multicad для nanoCAD 21-26</Description>
 		<HostFamily>NC</HostFamily>
 		<HostCode>n</HostCode>
 	</PropertyGroup>

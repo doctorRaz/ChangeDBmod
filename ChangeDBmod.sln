@@ -1,15 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.8.34330.188
+# Visual Studio Version 18
+VisualStudioVersion = 18.10.12217.157 stable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChangeDBmod.AC2018", "ChangeDBmod.AC2018\ChangeDBmod.AC2018.csproj", "{2D766D79-2676-47F1-B07F-30C76617C3F8}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChangeDBmod.NC.21.0", "ChangeDBmod.NC.21\ChangeDBmod.NC.21.0.csproj", "{B7830ADF-508D-4A43-B4AE-7BF0CDD35430}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChangeDBmod.NC.26.0", "ChangeDBmod.NC.26\ChangeDBmod.NC.26.0.csproj", "{AAB71E84-AE5D-487A-BDD2-9686BD5F94F7}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChangeDBmod.NC", "ChangeDBmod.NC\ChangeDBmod.NC.csproj", "{0DDD4E94-D0C3-47C7-A8C1-0967705E9C8F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChangedbMod.Tests", "ChangedbMod.Tests\ChangedbMod.Tests.csproj", "{7E5D0B77-6B0B-4C74-9D1D-5F5B4A1A0E3A}"
 EndProject
@@ -27,14 +23,6 @@ Global
 		{B7830ADF-508D-4A43-B4AE-7BF0CDD35430}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B7830ADF-508D-4A43-B4AE-7BF0CDD35430}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B7830ADF-508D-4A43-B4AE-7BF0CDD35430}.Release|Any CPU.Build.0 = Release|Any CPU
-		{AAB71E84-AE5D-487A-BDD2-9686BD5F94F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{AAB71E84-AE5D-487A-BDD2-9686BD5F94F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{AAB71E84-AE5D-487A-BDD2-9686BD5F94F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{AAB71E84-AE5D-487A-BDD2-9686BD5F94F7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0DDD4E94-D0C3-47C7-A8C1-0967705E9C8F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0DDD4E94-D0C3-47C7-A8C1-0967705E9C8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0DDD4E94-D0C3-47C7-A8C1-0967705E9C8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0DDD4E94-D0C3-47C7-A8C1-0967705E9C8F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7E5D0B77-6B0B-4C74-9D1D-5F5B4A1A0E3A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7E5D0B77-6B0B-4C74-9D1D-5F5B4A1A0E3A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7E5D0B77-6B0B-4C74-9D1D-5F5B4A1A0E3A}.Release|Any CPU.ActiveCfg = Release|Any CPU
