@@ -1,4 +1,3 @@
-# ChangeDBmod 0.6
 
 ChangeDBmod — дополнение для работы с базами данных MultiCAD из командной строки CAD.
 
