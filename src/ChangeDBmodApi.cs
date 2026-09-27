@@ -12,7 +12,7 @@ namespace drz.ChangeDBmod
         /// <param name="parameter">Идентификатор параметра MultiCAD.</param>
         public static void SetParam(string value, int parameter)
         {
-            MulticadInterop.MulticadReflection.SetParam(value, parameter);
+            drz.MulticadInterop.MulticadReflection.SetParam(value, parameter);
         }
     }
 }
