@@ -1,15 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.10.12217.157 stable
+VisualStudioVersion = 18.10.12217.157
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChangeDBmod.AC2018+", "ChangeDBmod.AC2018\\ChangeDBmod.AC2018+.csproj", "{2D766D79-2676-47F1-B07F-30C76617C3F8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChangeDBmod.AC2018", "ChangeDBmod.AC2018\ChangeDBmod.AC2018.csproj", "{2D766D79-2676-47F1-B07F-30C76617C3F8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChangeDBmod.NC.21+", "ChangeDBmod.NC.21\\ChangeDBmod.NC.21+.csproj", "{B7830ADF-508D-4A43-B4AE-7BF0CDD35430}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChangeDBmod.NC.21", "ChangeDBmod.NC.21\ChangeDBmod.NC.21.csproj", "{B7830ADF-508D-4A43-B4AE-7BF0CDD35430}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChangeDBmod.Tests", "ChangeDBmod.Tests\\ChangeDBmod.Tests.csproj", "{7E5D0B77-6B0B-4C74-9D1D-5F5B4A1A0E3A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChangeDBmod.Tests", "ChangeDBmod.Tests\ChangeDBmod.Tests.csproj", "{7E5D0B77-6B0B-4C74-9D1D-5F5B4A1A0E3A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MulticadInterop", "MulticadInterop\\MulticadInterop.csproj", "{D5F9A5D6-7E13-4B77-A9D7-4A1F5F3B2C81}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MulticadInterop", "MulticadInterop\MulticadInterop.csproj", "{D5F9A5D6-7E13-4B77-A9D7-4A1F5F3B2C81}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,7 +23,6 @@ Global
 		{2D766D79-2676-47F1-B07F-30C76617C3F8}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B7830ADF-508D-4A43-B4AE-7BF0CDD35430}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B7830ADF-508D-4A43-B4AE-7BF0CDD35430}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B7830ADF-508D-4A43-B4AE-7BF0CDD35430}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B7830ADF-508D-4A43-B4AE-7BF0CDD35430}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B7830ADF-508D-4A43-B4AE-7BF0CDD35430}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7E5D0B77-6B0B-4C74-9D1D-5F5B4A1A0E3A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -32,7 +31,6 @@ Global
 		{7E5D0B77-6B0B-4C74-9D1D-5F5B4A1A0E3A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D5F9A5D6-7E13-4B77-A9D7-4A1F5F3B2C81}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D5F9A5D6-7E13-4B77-A9D7-4A1F5F3B2C81}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D5F9A5D6-7E13-4B77-A9D7-4A1F5F3B2C81}.Debug|Any CPU.Build.0 = Release|Any CPU
 		{D5F9A5D6-7E13-4B77-A9D7-4A1F5F3B2C81}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D5F9A5D6-7E13-4B77-A9D7-4A1F5F3B2C81}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
