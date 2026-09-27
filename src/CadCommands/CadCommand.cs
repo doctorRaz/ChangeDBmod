@@ -1,5 +1,4 @@
-using drz.MulticadInterop;
-using System.ComponentModel;
+using drz.ChangeDBmod.MulticadInterop;
 
 #if NC
 
@@ -42,7 +41,6 @@ namespace drz.ChangeDBmod
         /// Переключает базу данных Multicad.
         /// </summary>
         [Rtm.CommandMethod("drz_changedb", Rtm.CommandFlags.Session)]
-        [Description("Переключение базы данных Multicad")]
         public void ChangedbMod()
         {
             App.Document doc = App.Application.DocumentManager.MdiActiveDocument;
@@ -57,21 +55,8 @@ namespace drz.ChangeDBmod
 
             if (Ed.PromptStatus.OK == pr.Status)
             {
-                MulticadParamManager.SetParam(pr.StringResult, 9);
+                MulticadReflection.SetParam(pr.StringResult, 9);
             }
         }
-
-
-        #if DEBUG
-        [Rtm.CommandMethod("drz_notifay", Rtm.CommandFlags.Session)]
-        [Description("Отправка уведомления в Multicad")]
-        public void drz_notifay()
-        {
-
-            MulticadNotificator.WriteMessage("Hello Multicad");
-
-        }
-
-        #endif
     }
 }
