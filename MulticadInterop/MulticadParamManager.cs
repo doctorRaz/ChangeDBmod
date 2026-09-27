@@ -2,13 +2,13 @@ using System;
 using System.Diagnostics;
 using System.Reflection;
 
-namespace drz.ChangeDBmod.MulticadInterop
+namespace drz.MulticadInterop
 {
     /// <summary>
     /// Предоставляет доступ к API Multicad без compile-time зависимости
     /// от конкретной версии Multicad.
     /// </summary>
-    internal static class MulticadReflection
+    public static class MulticadParamManager
     {
         private static readonly MethodInfo SetParamMethod = FindSetParam();
 

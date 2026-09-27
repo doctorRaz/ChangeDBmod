@@ -4,13 +4,13 @@
         {
             "name": "ChangeDBmod_NC",
             "projects": [
-                "ChangeDBmod.NC.21/ChangeDBmod.NC.21+.csproj"
+                "ChangeDBmod.NC.21/ChangeDBmod.NC.21.csproj"
             ]
         },
         {
             "name": "ChangeDBmod_AC",
             "projects": [
-                "ChangeDBmod.AC2018/ChangeDBmod.AC2018+.csproj"
+                "ChangeDBmod.AC2018/ChangeDBmod.AC2018.csproj"
             ]
         }
     ],
@@ -20,6 +20,6 @@
     ],
     "publicHere": true,
     "remote": [
-        "doctorRaz/ChangeDBmod"
+  
     ]
 }
