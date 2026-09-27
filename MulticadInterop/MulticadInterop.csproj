@@ -2,7 +2,6 @@
 	<PropertyGroup>
 		<TargetFramework>netstandard2.0</TargetFramework>
 		<RootNamespace>drz.MulticadInterop</RootNamespace>
-		<AssemblyName>drz.MulticadInterop</AssemblyName>
 		<Description>Reflection-based access to Multicad API without compile-time dependency.</Description>
 	</PropertyGroup>
 </Project>
