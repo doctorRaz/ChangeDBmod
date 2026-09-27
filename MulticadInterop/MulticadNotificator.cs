@@ -5,37 +5,37 @@ using System.Reflection;
 namespace drz.MulticadInterop
 {
     /// <summary>
-    /// Предоставляет доступ к API Multicad без compile-time зависимости
+    /// Предоставляет доступ к McNotificator без compile-time зависимости
     /// от конкретной версии Multicad.
     /// </summary>
-    public static class MulticadReflection
+    public static class MulticadNotificator
     {
-        private static readonly MethodInfo SetParamMethod = FindSetParam();
-
         /// <summary>
-        /// Устанавливает параметр Multicad.
+        /// Выводит сообщение в командную строку NanoCAD.
         /// </summary>
-        /// <param name="value">Значение параметра.</param>
-        /// <param name="parameter">Идентификатор параметра Multicad.</param>
+        /// <param name="message">Текст сообщения.</param>
         /// <exception cref="InvalidOperationException">
-        /// Возникает, если API Multicad не найден в загруженных сборках.
+        /// Возникает, если McNotificator.CreateMessage не найден
+        /// в загруженных сборках.
         /// </exception>
-        public static void SetParam(string value, int parameter)
+        public static void WriteMessage(string message)
         {
-            if (SetParamMethod == null)
+            if (CreateMessageMethod == null)
             {
-                throw new InvalidOperationException("McParamManager.SetParam не найден");
+                throw new InvalidOperationException(
+                    "McNotificator.CreateMessage не найден");
             }
 
-            object param = value;
-            SetParamMethod.Invoke(null, new object[] { param, parameter });
+            CreateMessageMethod.Invoke(null, new object[] { message });
         }
 
+        private static readonly MethodInfo CreateMessageMethod = FindCreateMessage();
+
         /// <summary>
-        /// Находит метод McParamManager.SetParam в загруженных сборках.
+        /// Находит метод McNotificator.CreateMessage в загруженных сборках.
         /// Поддерживаются оба написания namespace, встречающиеся в версиях Multicad.
         /// </summary>
-        private static MethodInfo FindSetParam()
+        private static MethodInfo FindCreateMessage()
         {
             Stopwatch sw = Stopwatch.StartNew();
 
@@ -45,10 +45,10 @@ namespace drz.MulticadInterop
                 {
                     Type type =
                         assembly.GetType(
-                            "Multicad.ApplicationServices.McParamManager",
+                            "Multicad.ApplicationServices.McNotificator",
                             false)
                         ?? assembly.GetType(
-                            "Multicad.AplicationServices.McParamManager",
+                            "Multicad.AplicationServices.McNotificator",
                             false);
 
                     if (type == null)
@@ -57,14 +57,14 @@ namespace drz.MulticadInterop
                     }
 
                     MethodInfo method = type.GetMethod(
-                        "SetParam",
-                        new[] { typeof(object).MakeByRefType(), typeof(int) });
+                        "CreateMessage",
+                        new[] { typeof(string) });
 
                     if (method != null)
                     {
                         sw.Stop();
                         Debug.WriteLine(
-                            $"McParamManager.SetParam найден за {sw.ElapsedMilliseconds} мс");
+                            $"McNotificator.CreateMessage найден за {sw.ElapsedMilliseconds} мс");
                         return method;
                     }
                 }
@@ -77,7 +77,7 @@ namespace drz.MulticadInterop
 
             sw.Stop();
             Debug.WriteLine(
-                $"McParamManager.SetParam не найден, поиск занял {sw.ElapsedMilliseconds} мс");
+                $"McNotificator.CreateMessage не найден, поиск занял {sw.ElapsedMilliseconds} мс");
 
             return null;
         }
