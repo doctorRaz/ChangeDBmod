@@ -93,12 +93,47 @@ dotnet build ChangeDBmod.sln
 В репозитории используются GitHub Actions:
 
 - `ci.yml` — восстановление зависимостей, сборка всего решения и запуск тестов;
-- `create-release-tag.yml` — создание release tag;
+- `create-release-tag.yml` — создание release tag после слияния PR;
 - `release.yml` — сборка и публикация релиза.
 
 Все проекты решения участвуют в обычных `restore/build/test`. При публикации используются только проекты, явно указанные в секции `publish` файла `.github/release-settings/release.config.json`.
 
 Таким образом, наличие проекта в решении само по себе не означает его публикацию. Например, `ChangeDBmod.Tests` собирается и тестируется, но в релиз не публикуется.
+
+### Запуск публикации
+
+Публикация может быть запущена двумя способами:
+
+1. **Через PR с label `publish`.**
+   
+   После слияния PR в одну из веток `master`, `develop` или `test/master` workflow `create-release-tag.yml` проверяет наличие label `publish`. Если PR был действительно слит и label присутствует, workflow автоматически создаёт release tag и запускает `release.yml` для этого тега.
+
+2. **Push release tag.**
+   
+   Workflow `release.yml` запускается при push тега, соответствующего шаблонам:
+   
+   ```text
+   *-release*
+   *-mandatory*
+   ```
+   
+   Дополнительно workflow проверяет полный формат тега. Имя продукта берётся из свойства `solution` в `.github/release-settings/release.config.json`. Допустимы теги вида:
+   
+   ```text
+   <Product>_<Major.Minor>-release<number>
+   <Product>_<Major.Minor>-mandatory<number>
+   ```
+   
+   Например:
+   
+   ```text
+   ChangeDBmod_0.6-release1
+   ChangeDBmod_0.7-mandatory1
+   ```
+   
+   Тег должен указывать на нужный commit. При ручном push подходящего тега `release.yml` выполняет полный цикл проверки, сборки, тестирования и публикации.
+
+В штатном сценарии тег создаётся автоматически после слияния PR с label `publish`. Тип тега (`release` или `mandatory`) и его номер определяются workflow на основании версии проекта и существующих release-тегов.
 
 Готовые опубликованные версии доступны в разделе [Releases](https://github.com/oiltest90-dev/ChangeDBmod-dev/releases).
 
