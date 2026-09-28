@@ -20,27 +20,34 @@ ChangeDBmod добавляет команду:
 
 | Проект | Назначение |
 |---|---|
-| `ChangeDBmod.NC.21+` | переключение баз MultiCAD для nanoCAD 21+ |
-| `ChangeDBmod.AC2018+` | переключение баз MultiCAD для AutoCAD 2018+ |
+| `ChangeDBmod.MultiCad` | переключение баз MultiCAD для nanoCAD 21+ |
+| `ChangeDBmod.AC2018` | переключение баз MultiCAD для AutoCAD 2018+ |
 | `ChangeDBmod.Tests` | автоматические тесты |
+| `MulticadInterop` | общая вспомогательная библиотека для взаимодействия с API MultiCAD |
 
 Проект `ChangeDBmod.Tests` используется для сборки и запуска тестов и не входит в публикуемые CAD-сборки.
 
 ### nanoCAD
 
-Проект `ChangeDBmod.NC.21+` собирается под `.NET Framework 4.6.2` и использует `nanoCAD.Platform.NET` версии 21.0.5699.3427.
+`ChangeDBmod.MultiCad` использует API MultiCAD напрямую. Вызовы специфичных методов MultiCAD, для которых требуется совместимость между версиями API, вынесены в `MulticadInterop`.
+
+Проект собирается под `.NET Framework 4.8` и использует пакет `MultiCAD.NET` версии 21.0.5699.3427.
 
 ### AutoCAD
 
-Проект `ChangeDBmod.AC2018+` собирается под `.NET Framework 4.8` и использует пакет `AutoCAD.NET` версии 22.0.0.
+`ChangeDBmod.AC2018` использует штатный API AutoCAD для регистрации команды и получения строки из командной строки. Взаимодействие с MultiCAD выполняется через `MulticadInterop`.
+
+Проект собирается под `.NET Framework 4.8` и использует пакет `AutoCAD.NET` версии 22.0.0.
+
+Команда проверена на AutoCAD 2025 и 2026. На AutoCAD 2024 + СПДС 2024 работоспособность не подтверждена, см. [issue #25](https://github.com/oiltest90-dev/ChangeDBmod-dev/issues/25).
 
 ## MultiCAD Interop
 
-Работа с методами MultiCAD вынесена в отдельный слой **MultiCAD Interop**.
+`MulticadInterop` — отдельная вспомогательная библиотека для взаимодействия с API MultiCAD.
 
-Этот слой изолирует взаимодействие с API MultiCAD от основной логики ChangeDBmod. Это позволяет обращаться к необходимым методам MultiCAD через единый интерфейс взаимодействия и не смешивать код работы с API CAD с логикой переключения базы данных.
+Она содержит общий для CAD-сборок код, связанный с вызовами MultiCAD, которые нельзя надёжно использовать напрямую из-за различий API между версиями nanoCAD.
 
-Изменения, связанные с API MultiCAD, следует вносить в слой Interop, сохраняя основную логику ChangeDBmod независимой от конкретного способа вызова методов MultiCAD.
+В частности, через Interop выполняются вызовы параметров MultiCAD и уведомлений. Основная логика команд при этом остаётся в соответствующем CAD-проекте.
 
 ## Использование
 
@@ -72,7 +79,7 @@ MS SQL:
 
 Решение: `ChangeDBmod.sln`.
 
-В решении находятся CAD-проекты и тестовый проект `ChangeDBmod.Tests`.
+В решении находятся два CAD-проекта, вспомогательная библиотека `MulticadInterop` и тестовый проект `ChangeDBmod.Tests`.
 
 Запуск тестов:
 
@@ -98,7 +105,7 @@ dotnet build ChangeDBmod.sln
 
 Все проекты решения участвуют в обычных `restore/build/test`. При публикации используются только проекты, явно указанные в секции `publish` файла `.github/release-settings/release.config.json`.
 
-Таким образом, наличие проекта в решении само по себе не означает его публикацию. Например, `ChangeDBmod.Tests` собирается и тестируется, но в релиз не публикуется.
+Таким образом, наличие проекта в решении само по себе не означает его публикацию. Например, `ChangeDBmod.Tests` и `MulticadInterop` участвуют в сборке, но в релиз как отдельные публикуемые проекты не включены.
 
 ### Запуск публикации
 
@@ -106,7 +113,7 @@ dotnet build ChangeDBmod.sln
 
 1. **Через PR с label `publish`.**
    
-   После слияния PR в одну из веток `master`, `develop` или `test/master` workflow `create-release-tag.yml` проверяет наличие label `publish`. Если PR был действительно слит и label присутствует, workflow автоматически создаёт release tag и запускает `release.yml` для этого тега.
+   После слияния PR в одну из веток `master`, `develop` или `test/master` workflow `create-release-tag.yml` проверяет наличие label `publish`. Если PR был действительно слит и label присутствует, workflow автоматически создаёт release tag и явно запускает `release.yml` для этого тега.
 
 2. **Push release tag.**
    
@@ -117,7 +124,7 @@ dotnet build ChangeDBmod.sln
    *-mandatory*
    ```
    
-   Дополнительно workflow проверяет полный формат тега. Имя продукта берётся из свойства `solution` в `.github/release-settings/release.config.json`. Допустимы теги вида:
+   Дополнительно workflow проверяет имя продукта и формат тега. Имя продукта берётся из свойства `solution` в `.github/release-settings/release.config.json`. Для текущего проекта используются теги вида:
    
    ```text
    <Product>_<Major.Minor>-release<number>
