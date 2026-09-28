@@ -2,9 +2,9 @@
     "solution": "ChangeDBmod.sln",
     "publish": [
         {
-            "name": "ChangeDBmod_NC",
+            "name": "ChangeDBmod.MultiCad",
             "projects": [
-                "ChangeDBmod.NC.21/ChangeDBmod.NC.21.csproj"
+                "ChangeDBmod.MultiCad/ChangeDBmod.MultiCad"
             ]
         },
         {
