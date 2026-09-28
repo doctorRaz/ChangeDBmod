@@ -11,7 +11,7 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\MulticadInterop\MulticadInterop.csproj" />
-		<PackageReference Include="nanoCAD.Platform.NET" Version="21.0.5699.3427" />
+		<PackageReference Include="MultiCAD.NET" Version="21.0.5699.3427" />
 	</ItemGroup>
 	
 </Project>

@@ -14,5 +14,6 @@
 		<PackageReference Include="AutoCAD.NET" Version="22.0.0">
 			<ExcludeAssets>runtime</ExcludeAssets>
 		</PackageReference>
+		<PackageReference Include="MultiCAD.NET" Version="21.0.5699.3427" />
 	</ItemGroup>
 </Project>

@@ -1,28 +1,17 @@
 using drz.MulticadInterop;
+using Multicad.DatabaseServices;
+using Multicad.Runtime;
 using System.ComponentModel;
 
-#if NC
 
-using App = HostMgd.ApplicationServices;
-using Ed = HostMgd.EditorInput;
-using Rtm = Teigha.Runtime;
-
-#elif AC
-
-using App = Autodesk.AutoCAD.ApplicationServices;
-using Ed = Autodesk.AutoCAD.EditorInput;
-using Rtm = Autodesk.AutoCAD.Runtime;
-
-#endif
-
-[assembly: Rtm.CommandClass(typeof(drz.ChangeDBmod.CadCommand))]
+[assembly: CommandClass(typeof(drz.ChangeDBmod.CadCommand))]
 
 namespace drz.ChangeDBmod
 {
     /// <summary>
     /// Команды ChangeDBmod.
     /// </summary>
-    internal class CadCommand : Rtm.IExtensionApplication
+    internal class CadCommand : IExtensionApplication
     {
         /// <summary>
         /// Инициализирует расширение.
@@ -41,29 +30,27 @@ namespace drz.ChangeDBmod
         /// <summary>
         /// Переключает базу данных Multicad.
         /// </summary>
-        [Rtm.CommandMethod("drz_changedb", Rtm.CommandFlags.Session)]
+        [CommandMethod("drz_changedb", CommandFlags.Session)]
         [Description("Переключение базы данных Multicad")]
         public void ChangedbMod()
         {
-            App.Document doc = App.Application.DocumentManager.MdiActiveDocument;
-            Ed.Editor ed = doc.Editor;
+            //https://developer.nanocad.ru/redmine/boards/4/topics/847?r=1246#message-1246
 
-            Ed.PromptStringOptions opts = new Ed.PromptStringOptions("enter base:")
+            InputJig jig = new InputJig();
+
+            string promt = jig.GetText("enter base:", true);
+
+            if (!string.IsNullOrWhiteSpace(promt))
             {
-                AllowSpaces = true
-            };
+                MulticadParamManager.SetParam(promt, 9);
 
-            Ed.PromptResult pr = ed.GetString(opts);
-
-            if (Ed.PromptStatus.OK == pr.Status)
-            {
-                MulticadParamManager.SetParam(pr.StringResult, 9);
             }
+
         }
 
 
-        #if DEBUG
-        [Rtm.CommandMethod("drz_notifay", Rtm.CommandFlags.Session)]
+#if DEBUG
+        [CommandMethod("drz_notifay", CommandFlags.Session)]
         [Description("Отправка уведомления в Multicad")]
         public void drz_notifay()
         {
@@ -72,6 +59,6 @@ namespace drz.ChangeDBmod
 
         }
 
-        #endif
+#endif
     }
 }
