@@ -8,7 +8,7 @@
             ]
         },
         {
-            "name": "ChangeDBmod_AC",
+            "name": "ChangeDBmod.AC",
             "projects": [
                 "ChangeDBmod.AC2018/ChangeDBmod.AC2018.csproj"
             ]
