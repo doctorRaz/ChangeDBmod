@@ -10,6 +10,7 @@
 		<DefineConstants>$(DefineConstants);AC</DefineConstants>
 	</PropertyGroup>
 	<ItemGroup>
+		<ProjectReference Include="..\MulticadInterop\MulticadInterop.csproj" />
 		<PackageReference Include="AutoCAD.NET" Version="22.0.0">
 			<ExcludeAssets>runtime</ExcludeAssets>
 		</PackageReference>
