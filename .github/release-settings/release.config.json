@@ -4,7 +4,7 @@
         {
             "name": "ChangeDBmod.MultiCad",
             "projects": [
-                "ChangeDBmod.MultiCad/ChangeDBmod.MultiCad"
+                "ChangeDBmod.MultiCad/ChangeDBmod.MultiCad.csproj"
             ]
         },
         {
