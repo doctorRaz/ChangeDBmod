@@ -1,6 +1,7 @@
 # ChangeDBmod
 
-> **Внимание:** проект предназначен для использования в nanoCAD и AutoCAD. Перед использованием рекомендуется проверить работу команды на вашей конфигурации CAD и MultiCAD.
+> [!CAUTION]
+> проект предназначен для использования в nanoCAD и AutoCAD. Перед использованием рекомендуется проверить работу команды на вашей конфигурации CAD и MultiCAD.
 
 ## Назначение
 
@@ -66,6 +67,14 @@ ChangeDBmod позволяет переключать базу данных Mult
 Если требуется выполнить переключение из собственного приложения или плагина, рекомендуется вызывать команду `drz_changedb`, а не использовать внутренний механизм ChangeDBmod напрямую:
 
 ```csharp
-// Передача команды CAD с требуемым значением базы.
-doc.SendStringToExecute("drz_changedb " + value + "\\n", true, false, false);
+/// <summary>
+/// Устанавливает параметр Multicad.
+/// </summary>
+/// <param name="value">Значение параметра.</param>
+/// <param name="parameter">Идентификатор параметра Multicad.</param>
+/// <exception cref="InvalidOperationException">
+/// Возникает, если API Multicad не найден в загруженных сборках.
+/// </exception>
+
+ MulticadParamManager.SetParam(string value, int parameter); // Передача команды CAD с требуемым значением.
 ```

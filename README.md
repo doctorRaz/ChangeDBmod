@@ -2,17 +2,19 @@
 
 Дополнение для nanoCAD и AutoCAD + СПДС CS / Механика CS, позволяющее переключать базы данных MultiCAD из командной строки.
 
-> **Статус:** проект находится в разработке. Используйте на свой риск и проверяйте совместимость со своей версией CAD.
+> [!CAUTION]
+> проект находится в разработке.\
+> Используйте на свой риск и проверяйте совместимость со своей версией CAD.
+
+## [Описание от Deepwiki](https://deepwiki.com/doctorRaz/ChangedbMod) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/doctorRaz/ChangedbMod) 
 
 ## Описание
 
-ChangeDBmod добавляет команду:
+**ChangeDBmod** добавляет команду:
 
 `drz_changedb` — переключение базы данных MultiCAD.
 
 В отличие от штатных команд `SPchangedb` и `MCchangedb`, команда доступна непосредственно из платформы. Также поддерживаются пути с пробелами.
-
-Подробное техническое описание проекта: [DeepWiki](https://deepwiki.com/doctorRaz/ChangedbMod).
 
 ## Поддерживаемые CAD
 
