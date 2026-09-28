@@ -1,19 +1,9 @@
 using drz.MulticadInterop;
 using System.ComponentModel;
 
-#if NC
-
-using App = HostMgd.ApplicationServices;
-using Ed = HostMgd.EditorInput;
-using Rtm = Teigha.Runtime;
-
-#elif AC
-
 using App = Autodesk.AutoCAD.ApplicationServices;
 using Ed = Autodesk.AutoCAD.EditorInput;
 using Rtm = Autodesk.AutoCAD.Runtime;
-
-#endif
 
 [assembly: Rtm.CommandClass(typeof(drz.ChangeDBmod.CadCommand))]
 
@@ -29,6 +19,9 @@ namespace drz.ChangeDBmod
         /// </summary>
         public void Initialize()
         {
+#if DEBUG
+            drz_notifay();
+#endif
         }
 
         /// <summary>
@@ -61,17 +54,15 @@ namespace drz.ChangeDBmod
             }
         }
 
+#if DEBUG
 
-        #if DEBUG
         [Rtm.CommandMethod("drz_notifay", Rtm.CommandFlags.Session)]
         [Description("Отправка уведомления в Multicad")]
         public void drz_notifay()
         {
-
             MulticadNotificator.WriteMessage("Hello Multicad");
-
         }
 
-        #endif
+#endif
     }
 }

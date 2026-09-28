@@ -1,6 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-	<Import Project="..\Shared.props" Condition="Exists('..\Shared.props')" />
-	<PropertyGroup>
+		<PropertyGroup>
 		<TargetFramework>net48-windows</TargetFramework>
 		<Description>Переключалка баз Multicad для AutoCAD 2018+</Description>
 		<HostFamily>AC</HostFamily>
