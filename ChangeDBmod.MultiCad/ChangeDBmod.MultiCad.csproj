@@ -2,16 +2,15 @@
 	<Import Project="..\Shared.props" Condition="Exists('..\Shared.props')" />
 	<PropertyGroup>
 		<TargetFramework>net48-windows</TargetFramework>
-		<Description>Переключалка баз Multicad для nanoCAD 21+</Description>
-		<HostFamily>NC</HostFamily>
-		<HostCode>n</HostCode>
+		<Description>Переключалка баз Multicad для AutoCAD 2018+</Description>
+		<HostFamily>AC</HostFamily>
+		<HostCode>a</HostCode>
 	</PropertyGroup>
 	<PropertyGroup>
-		<DefineConstants>$(DefineConstants);$(HostFamily)</DefineConstants>
+		<DefineConstants>$(DefineConstants);AC</DefineConstants>
 	</PropertyGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\MulticadInterop\MulticadInterop.csproj" />
 		<PackageReference Include="MultiCAD.NET" Version="21.0.5699.3427" />
 	</ItemGroup>
-	
 </Project>
