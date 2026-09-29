@@ -41,7 +41,7 @@
 
 Проект собирается под `.NET Framework 4.8` и использует пакет `AutoCAD.NET` версии 22.0.0.
 
-Команда проверена на AutoCAD 2025 и 2026. На AutoCAD 2024 + СПДС 2024 работоспособность не подтверждена, см. [issue #25](https://github.com/oiltest90-dev/ChangeDBmod-dev/issues/25).
+Команда проверена на AutoCAD 2025 и 2026. Для использования `ChangeDBmod.MultiCad` в AutoCAD требуется действующая лицензия СПДС CS. На AutoCAD 2024 + СПДС 2024 работоспособность не подтверждена, см. [issue #25](https://github.com/oiltest90-dev/ChangeDBmod-dev/issues/25).
 
 ## MultiCAD Interop
 
