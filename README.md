@@ -22,8 +22,8 @@
 
 | Проект | Назначение |
 |---|---|
-| `ChangeDBmod.MultiCad` | переключение баз MultiCAD для nanoCAD 21+ |
-| `ChangeDBmod.AC2018` | переключение баз MultiCAD для AutoCAD 2018+ |
+| `ChangeDBmod.MC` | переключение баз MultiCAD для nanoCAD 21+ |
+| `ChangeDBmod.AC` | переключение баз MultiCAD для AutoCAD 2018+ |
 | `ChangeDBmod.Tests` | автоматические тесты |
 | `MulticadInterop` | общая вспомогательная библиотека для взаимодействия с API MultiCAD |
 
@@ -31,7 +31,7 @@
 
 ### nanoCAD
 
-`ChangeDBmod.MultiCad` использует API MultiCAD напрямую. Вызовы специфичных методов MultiCAD, для которых требуется совместимость между версиями API, вынесены в `MulticadInterop`.
+`ChangeDBmod.MC` использует API MultiCAD напрямую. Вызовы специфичных методов MultiCAD, для которых требуется совместимость между версиями API, вынесены в `MulticadInterop`.
 
 Проект собирается под `.NET Framework 4.8` и использует пакет `MultiCAD.NET` версии 21.0.5699.3427.
 
@@ -41,7 +41,11 @@
 
 Проект собирается под `.NET Framework 4.8` и использует пакет `AutoCAD.NET` версии 22.0.0.
 
-Команда проверена на AutoCAD 2025 и 2026. Для использования `ChangeDBmod.MultiCad` в AutoCAD требуется действующая лицензия СПДС CS. На AutoCAD 2024 + СПДС 2024 работоспособность не подтверждена, см. [issue #25](https://github.com/oiltest90-dev/ChangeDBmod-dev/issues/25).
+Команда проверена на AutoCAD 2025 и 2026. Для использования `ChangeDBmod.MC` в AutoCAD требуется действующая лицензия СПДС CS. 
+
+`ChangeDBmod.AC` работает без лицензии, но привязан к AutoCAD. 
+
+На AutoCAD 2024 + СПДС 2024 работоспособность не подтверждена, см. [issue #25](https://github.com/oiltest90-dev/ChangeDBmod-dev/issues/25).
 
 ## MultiCAD Interop
 
