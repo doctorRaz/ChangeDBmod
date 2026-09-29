@@ -4,13 +4,13 @@
         {
             "name": "ChangeDBmod.MC",
             "projects": [
-                "ChangeDBmod.MultiCad/ChangeDBmod.MultiCad.csproj"
+                "ChangeDBmod.MC/ChangeDBmod.MC.csproj"
             ]
         },
         {
             "name": "ChangeDBmod.AC",
             "projects": [
-                "ChangeDBmod.AC2018/ChangeDBmod.AC2018.csproj"
+                "ChangeDBmod.AC/ChangeDBmod.AC.csproj"
             ]
         }
     ],
