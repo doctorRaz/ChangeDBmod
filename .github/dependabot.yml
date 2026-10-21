@@ -5,11 +5,18 @@
 
 version: 2
 
+registries:
+  nanodev:
+    type: nuget-feed
+    url: https://nuget.nanodev.ru/nuget
+
 updates:
   - package-ecosystem: "nuget"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
+    registries:
+      - nanodev
 
     groups:
       nuget-dependencies:
@@ -18,6 +25,7 @@ updates:
     # Эти зависимости зафиксированы для совместимости проекта.
     # Их обновление выполняется вручную и не должно предлагаться Dependabot.
     ignore:
+        - dependency-name: "NUnit"
         - dependency-name: "NUnit3TestAdapter"
         - dependency-name: "MultiCAD.NET"
         - dependency-name: "nanoCAD.Platform.NET"
