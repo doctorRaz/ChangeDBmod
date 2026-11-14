@@ -22,7 +22,7 @@
 
 | Проект              | Назначение                                                         |
 | ------------------- | ------------------------------------------------------------------ |
-| `ChangeDBmod.MC`    | переключение баз MultiCAD для nanoCAD 21+                          |
+| `ChangeDBmod.MC`    | переключение баз MultiCAD для nanoCAD 21+  и AutoCAD+ СПДС  CS                      |
 | `ChangeDBmod.AC`    | переключение баз MultiCAD для AutoCAD                              |
 | `ChangeDBmod.Tests` | автоматические тесты                                               |
 | `MulticadInterop`   | общая вспомогательная библиотека для взаимодействия с API MultiCAD |
